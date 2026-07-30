@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+{% block title %}{{ titulo }}{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h3 class="mb-0"><i class="bi bi-person-lines-fill"></i> {{ titulo }}</h3>
+    {% if perfil %}
+    <a href="{% url 'profiles:profile_detail' perfil.pk %}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left"></i> Voltar ao perfil
+    </a>
+    {% endif %}
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <form method="post" novalidate>
+            {% csrf_token %}
+            {% if form.non_field_errors %}
+                <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+            {% endif %}
+
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label">{{ form.nome.label }}</label>
+                    {{ form.nome }}
+                    {% for error in form.nome.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">{{ form.email.label }}</label>
+                    {{ form.email }}
+                    {% for error in form.email.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label">{{ form.senha.label }}</label>
+                    {{ form.senha }}
+                    <div class="form-text">{{ form.senha.help_text }}</div>
+                    {% for error in form.senha.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">{{ form.adspower_id.label }}</label>
+                    {{ form.adspower_id }}
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label">{{ form.tipo_autenticacao.label }}</label>
+                    {{ form.tipo_autenticacao }}
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">{{ form.status.label }}</label>
+                    {{ form.status }}
+                </div>
+
+                <div class="col-md-12">
+                    <label class="form-label">{{ form.dados_autenticacao.label }}</label>
+                    {{ form.dados_autenticacao }}
+                    <div class="form-text">{{ form.dados_autenticacao.help_text }}</div>
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label">{{ form.responsavel.label }}</label>
+                    {{ form.responsavel }}
+                </div>
+
+                <div class="col-md-12">
+                    <label class="form-label">{{ form.observacoes.label }}</label>
+                    {{ form.observacoes }}
+                </div>
+            </div>
+
+            {% if perfil %}
+                <div class="alert alert-secondary mt-4 small">
+                    <i class="bi bi-info-circle"></i>
+                    A fase atual (<strong>{{ perfil.get_fase_atual_display }}</strong>) é alterada pela ação
+                    "Avançar fase" na página de detalhes, não por este formulário — isso garante que toda
+                    mudança fique registrada no histórico de auditoria.
+                </div>
+            {% endif %}
+
+            <div class="mt-4">
+                <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> Salvar</button>
+                <a href="{% url 'profiles:profile_list' %}" class="btn btn-link">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

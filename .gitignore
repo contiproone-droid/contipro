@@ -1,0 +1,30 @@
+# Ambiente e segredos
+.env
+*.env
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+
+# Ambientes virtuais
+venv/
+env/
+.venv/
+ENV/
+
+# Django
+db.sqlite3
+db.sqlite3-journal
+staticfiles/
+media/
+*.log
+
+# Editores / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

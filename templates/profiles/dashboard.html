@@ -1,0 +1,133 @@
+{% extends 'base.html' %}
+{% load profile_extras %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<h3 class="mb-3"><i class="bi bi-bar-chart-line"></i> Dashboard</h3>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card h-100"><div class="card-body">
+            <div class="text-muted small">Total de perfis</div>
+            <div class="fs-3 fw-bold">{{ total_perfis }}</div>
+        </div></div>
+    </div>
+    <div class="col-md-3">
+        <div class="card h-100"><div class="card-body">
+            <div class="text-muted small">Concluídos neste mês</div>
+            <div class="fs-3 fw-bold text-success">{{ concluidos_mes }}</div>
+        </div></div>
+    </div>
+    <div class="col-md-3">
+        <div class="card h-100"><div class="card-body">
+            <div class="text-muted small">Concluídos (total)</div>
+            <div class="fs-3 fw-bold">{{ concluidos_total }}</div>
+        </div></div>
+    </div>
+    <div class="col-md-3">
+        <div class="card h-100"><div class="card-body">
+            <div class="text-muted small">Taxa de conversão (fase 1 → 7)</div>
+            <div class="fs-3 fw-bold text-primary">{{ taxa_conversao }}%</div>
+        </div></div>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-lg-8">
+        <div class="card h-100">
+            <div class="card-body">
+                <h6 class="card-title">Funil de fases</h6>
+                <canvas id="funilChart" height="110"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h6 class="card-title">Perfis por status</h6>
+                <canvas id="statusChart" height="110"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <h6 class="card-title">Perfis mais recentes</h6>
+        <div class="table-responsive">
+            <table class="table table-sm table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Nome</th>
+                        <th>Fase atual</th>
+                        <th>Status</th>
+                        <th>Responsável</th>
+                        <th>Atualizado em</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for perfil in perfis_recentes %}
+                    <tr>
+                        <td><a href="{% url 'profiles:profile_detail' perfil.pk %}">{{ perfil.nome }}</a></td>
+                        <td><span class="badge badge-fase bg-{{ perfil.fase_atual|badge_color }}">{{ perfil.get_fase_atual_display }}</span></td>
+                        <td><span class="badge bg-{{ perfil.status|badge_color }}">{{ perfil.get_status_display }}</span></td>
+                        <td>{{ perfil.responsavel|default:'—' }}</td>
+                        <td>{{ perfil.atualizado_em|date:'d/m/Y H:i' }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="5" class="text-center text-muted py-4">Nenhum perfil cadastrado ainda.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    fetch("{% url 'profiles:api_dashboard_data' %}")
+        .then(function (resp) { return resp.json(); })
+        .then(function (data) {
+            var funilLabels = data.funil.map(function (item) { return item.fase; });
+            var funilTotais = data.funil.map(function (item) { return item.total; });
+
+            new Chart(document.getElementById('funilChart'), {
+                type: 'bar',
+                data: {
+                    labels: funilLabels,
+                    datasets: [{
+                        label: 'Perfis',
+                        data: funilTotais,
+                        backgroundColor: '#0d6efd',
+                        borderRadius: 4,
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    plugins: { legend: { display: false } },
+                    scales: { x: { beginAtZero: true, ticks: { precision: 0 } } }
+                }
+            });
+
+            var statusLabels = data.status.map(function (item) { return item.status; });
+            var statusTotais = data.status.map(function (item) { return item.total; });
+
+            new Chart(document.getElementById('statusChart'), {
+                type: 'pie',
+                data: {
+                    labels: statusLabels,
+                    datasets: [{
+                        data: statusTotais,
+                        backgroundColor: ['#198754', '#dc3545', '#ffc107', '#6c757d'],
+                    }]
+                },
+                options: {
+                    plugins: { legend: { position: 'bottom' } }
+                }
+            });
+        });
+});
+</script>
+{% endblock %}
