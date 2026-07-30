@@ -96,8 +96,6 @@ def profile_detail(request, pk):
 
     return render(request, 'profiles/profile_detail.html', {
         'perfil': perfil,
-        'advance_form': PhaseAdvanceForm(),
-        'fases_ordenadas': Phase.ordered_values(),
         'historico': perfil.historico_fases.all(),
         'paginas': perfil.paginas.all(),
         'whatsapp_links': perfil.whatsapp_links.all(),

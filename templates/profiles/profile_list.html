@@ -2,9 +2,12 @@
 {% load profile_extras %}
 {% block title %}Perfis{% endblock %}
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h3 class="mb-0"><i class="bi bi-people-fill"></i> Perfis</h3>
-    <a href="{% url 'profiles:profile_create' %}" class="btn btn-primary">
+<div class="page-header">
+    <div>
+        <p class="page-header__eyebrow">Perfis</p>
+        <h1 class="page-header__title">Todos os perfis</h1>
+    </div>
+    <a href="{% url 'profiles:profile_create' %}" class="btn btn-brand">
         <i class="bi bi-plus-lg"></i> Novo Perfil
     </a>
 </div>
@@ -25,7 +28,7 @@
                 {{ filtro.status }}
             </div>
             <div class="col-md-1 d-grid">
-                <button type="submit" class="btn btn-outline-primary"><i class="bi bi-search"></i></button>
+                <button type="submit" class="btn btn-outline-ink"><i class="bi bi-search"></i></button>
             </div>
         </form>
     </div>
@@ -34,12 +37,11 @@
 <div class="card">
     <div class="table-responsive">
         <table class="table table-hover align-middle mb-0">
-            <thead class="table-light">
+            <thead>
                 <tr>
                     <th>Nome</th>
-                    <th>E-mail</th>
                     <th>AdsPower</th>
-                    <th>Fase atual</th>
+                    <th>Progresso do pipeline</th>
                     <th>Status</th>
                     <th>Responsável</th>
                     <th>Atualizado em</th>
@@ -49,25 +51,33 @@
             <tbody>
                 {% for perfil in perfis %}
                 <tr>
-                    <td><a href="{% url 'profiles:profile_detail' perfil.pk %}">{{ perfil.nome }}</a></td>
-                    <td>{{ perfil.email }}</td>
-                    <td>{{ perfil.adspower_id|default:'—' }}</td>
-                    <td><span class="badge badge-fase bg-{{ perfil.fase_atual|badge_color }}">{{ perfil.get_fase_atual_display }}</span></td>
-                    <td><span class="badge bg-{{ perfil.status|badge_color }}">{{ perfil.get_status_display }}</span></td>
+                    <td>
+                        <a href="{% url 'profiles:profile_detail' perfil.pk %}" class="fw-semibold text-decoration-none">{{ perfil.nome }}</a>
+                        <div class="text-muted small">{{ perfil.email }}</div>
+                    </td>
+                    <td class="mono text-muted">{{ perfil.adspower_id|default:'—' }}</td>
+                    <td>
+                        {% include 'profiles/_pipeline_track.html' with perfil=perfil size='mini' %}
+                        <div class="text-muted small mt-1">{{ perfil.get_fase_atual_display }}</div>
+                    </td>
+                    <td><span class="status-pill status-pill--{{ perfil.status|badge_color }}">{{ perfil.get_status_display }}</span></td>
                     <td>{{ perfil.responsavel|default:'—' }}</td>
-                    <td>{{ perfil.atualizado_em|date:'d/m/Y H:i' }}</td>
+                    <td class="text-muted small">{{ perfil.atualizado_em|date:'d/m/Y H:i' }}</td>
                     <td class="text-end">
-                        <a href="{% url 'profiles:profile_detail' perfil.pk %}" class="btn btn-sm btn-outline-secondary">
+                        <button type="button" class="btn btn-sm btn-brand" data-bs-toggle="modal" data-bs-target="#advanceModal{{ perfil.pk }}" {% if not perfil.proxima_fase %}disabled{% endif %}>
+                            <i class="bi bi-arrow-right-circle"></i> Avançar
+                        </button>
+                        <a href="{% url 'profiles:profile_detail' perfil.pk %}" class="btn btn-sm btn-outline-ink">
                             <i class="bi bi-eye"></i>
                         </a>
-                        <a href="{% url 'profiles:profile_update' perfil.pk %}" class="btn btn-sm btn-outline-secondary">
+                        <a href="{% url 'profiles:profile_update' perfil.pk %}" class="btn btn-sm btn-outline-ink">
                             <i class="bi bi-pencil"></i>
                         </a>
                     </td>
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="8" class="text-center text-muted py-4">Nenhum perfil encontrado.</td>
+                    <td colspan="7" class="text-center text-muted py-4">Nenhum perfil encontrado.</td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -88,4 +98,8 @@
     </ul>
 </nav>
 {% endif %}
+
+{% for perfil in perfis %}
+    {% include 'profiles/_advance_modal.html' with perfil=perfil %}
+{% endfor %}
 {% endblock %}

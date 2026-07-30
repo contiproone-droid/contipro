@@ -1,27 +1,35 @@
 {% extends 'base.html' %}
 {% block title %}Login{% endblock %}
-{% block content %}
-<div class="row justify-content-center mt-5">
-    <div class="col-md-4">
-        <div class="card p-4">
-            <h4 class="mb-3 text-center"><i class="bi bi-diagram-3-fill"></i> CRM de Perfis</h4>
-            <p class="text-muted text-center small">Entre para gerenciar os perfis</p>
-            <form method="post">
-                {% csrf_token %}
+{% block guest_content %}
+<div class="d-flex align-items-center justify-content-center" style="min-height: 100vh;">
+    <div class="col-11 col-sm-8 col-md-5 col-lg-4">
+        <div class="text-center mb-4">
+            <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-3"
+                 style="width: 3.2rem; height: 3.2rem; background: var(--ink-950); color: var(--signal-amber);">
+                <i class="bi bi-diagram-3-fill fs-4"></i>
+            </div>
+            <h1 class="font-display fs-3 fw-semibold mb-1">Pipeline<span class="accent">CRM</span></h1>
+            <p class="text-muted small mb-0">Gestão de perfis &middot; Facebook &amp; WhatsApp Business</p>
+        </div>
+        <div class="card">
+            <div class="card-body p-4">
                 {% if form.errors %}
-                    <div class="alert alert-danger py-2">Usuário ou senha inválidos.</div>
+                    <div class="alert alert-danger py-2 small">Usuário ou senha inválidos.</div>
                 {% endif %}
-                <div class="mb-3">
-                    <label class="form-label">Usuário</label>
-                    {{ form.username }}
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Senha</label>
-                    {{ form.password }}
-                </div>
-                <input type="hidden" name="next" value="{{ next }}">
-                <button type="submit" class="btn btn-primary w-100">Entrar</button>
-            </form>
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label small">Usuário</label>
+                        {{ form.username }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small">Senha</label>
+                        {{ form.password }}
+                    </div>
+                    <input type="hidden" name="next" value="{{ next }}">
+                    <button type="submit" class="btn btn-brand w-100">Entrar</button>
+                </form>
+            </div>
         </div>
     </div>
 </div>

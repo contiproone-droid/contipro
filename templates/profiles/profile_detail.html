@@ -2,16 +2,20 @@
 {% load profile_extras %}
 {% block title %}{{ perfil.nome }}{% endblock %}
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-3">
+<div class="page-header">
     <div>
-        <h3 class="mb-0"><i class="bi bi-person-badge"></i> {{ perfil.nome }}</h3>
+        <p class="page-header__eyebrow">Perfil</p>
+        <h1 class="page-header__title">{{ perfil.nome }}</h1>
         <div class="text-muted">{{ perfil.email }}</div>
     </div>
-    <div>
-        <a href="{% url 'profiles:profile_update' perfil.pk %}" class="btn btn-outline-secondary">
+    <div class="d-flex gap-2">
+        <button type="button" class="btn btn-brand" data-bs-toggle="modal" data-bs-target="#advanceModal{{ perfil.pk }}" {% if not perfil.proxima_fase %}disabled{% endif %}>
+            <i class="bi bi-arrow-right-circle"></i> Avançar fase
+        </button>
+        <a href="{% url 'profiles:profile_update' perfil.pk %}" class="btn btn-outline-ink">
             <i class="bi bi-pencil"></i> Editar
         </a>
-        <a href="{% url 'profiles:profile_list' %}" class="btn btn-outline-secondary">
+        <a href="{% url 'profiles:profile_list' %}" class="btn btn-outline-ink">
             <i class="bi bi-list"></i> Voltar
         </a>
     </div>
@@ -20,59 +24,35 @@
 <div class="row g-3 mb-3">
     <div class="col-md-3">
         <div class="card h-100"><div class="card-body">
-            <div class="text-muted small">Status</div>
-            <span class="badge bg-{{ perfil.status|badge_color }} fs-6">{{ perfil.get_status_display }}</span>
+            <div class="stat-card__eyebrow">Status</div>
+            <span class="status-pill status-pill--{{ perfil.status|badge_color }} mt-1">{{ perfil.get_status_display }}</span>
         </div></div>
     </div>
     <div class="col-md-3">
         <div class="card h-100"><div class="card-body">
-            <div class="text-muted small">Fase atual</div>
-            <span class="badge badge-fase bg-{{ perfil.fase_atual|badge_color }} fs-6">{{ perfil.get_fase_atual_display }}</span>
+            <div class="stat-card__eyebrow">Fase atual</div>
+            <div class="fw-semibold mt-1">{{ perfil.get_fase_atual_display }}</div>
         </div></div>
     </div>
     <div class="col-md-3">
         <div class="card h-100"><div class="card-body">
-            <div class="text-muted small">Perfil/Proxy AdsPower</div>
-            <div class="fw-semibold">{{ perfil.adspower_id|default:'—' }}</div>
+            <div class="stat-card__eyebrow">Perfil/Proxy AdsPower</div>
+            <div class="mono mt-1">{{ perfil.adspower_id|default:'—' }}</div>
         </div></div>
     </div>
     <div class="col-md-3">
         <div class="card h-100"><div class="card-body">
-            <div class="text-muted small">Responsável</div>
-            <div class="fw-semibold">{{ perfil.responsavel|default:'—' }}</div>
+            <div class="stat-card__eyebrow">Responsável</div>
+            <div class="fw-semibold mt-1">{{ perfil.responsavel|default:'—' }}</div>
         </div></div>
     </div>
 </div>
 
-<!-- Timeline de fases -->
 <div class="card mb-3">
     <div class="card-body">
-        <h6 class="card-title mb-3">Progresso do fluxo</h6>
-        <ol class="list-group list-group-numbered list-group-horizontal flex-wrap">
-            {% for fase_value in fases_ordenadas %}
-                <li class="list-group-item flex-fill{% if fase_value == perfil.fase_atual %} list-group-item-primary{% endif %}" style="min-width: 12rem;">
-                    {{ fase_value.label }}
-                    {% if fase_value == perfil.fase_atual %}<i class="bi bi-arrow-left-short"></i> atual{% endif %}
-                </li>
-            {% endfor %}
-        </ol>
-
-        {% if perfil.proxima_fase %}
-        <form method="post" action="{% url 'profiles:profile_advance_phase' perfil.pk %}" class="mt-3">
-            {% csrf_token %}
-            <div class="row g-2 align-items-end">
-                <div class="col-md-9">
-                    <label class="form-label small mb-1">{{ advance_form.observacao.label }}</label>
-                    {{ advance_form.observacao }}
-                </div>
-                <div class="col-md-3 d-grid">
-                    <button type="submit" class="btn btn-success">
-                        <i class="bi bi-arrow-right-circle"></i> Avançar para "{{ perfil.proxima_fase.label }}"
-                    </button>
-                </div>
-            </div>
-        </form>
-        {% else %}
+        <h6 class="card-title mb-3">Progresso do pipeline</h6>
+        {% include 'profiles/_pipeline_track.html' with perfil=perfil size='full' %}
+        {% if not perfil.proxima_fase %}
         <div class="alert alert-success mt-3 mb-0"><i class="bi bi-check-circle"></i> Perfil concluído — todas as fases finalizadas.</div>
         {% endif %}
     </div>
@@ -90,8 +70,8 @@
                     {% for pagina in paginas %}
                         <tr>
                             <td>{{ pagina.nome_pagina }}</td>
-                            <td><span class="badge bg-{{ pagina.status|badge_color }}">{{ pagina.get_status_display }}</span></td>
-                            <td>{{ pagina.data_criacao|date:'d/m/Y'|default:'—' }}</td>
+                            <td><span class="status-pill status-pill--{{ pagina.status|badge_color }}">{{ pagina.get_status_display }}</span></td>
+                            <td class="text-muted small">{{ pagina.data_criacao|date:'d/m/Y'|default:'—' }}</td>
                             <td>{% if pagina.link_pagina %}<a href="{{ pagina.link_pagina }}" target="_blank">abrir</a>{% else %}—{% endif %}</td>
                         </tr>
                     {% endfor %}
@@ -112,9 +92,9 @@
                     <tbody>
                     {% for link in whatsapp_links %}
                         <tr>
-                            <td>{{ link.numero_telefone }}</td>
-                            <td><span class="badge bg-{{ link.status|badge_color }}">{{ link.get_status_display }}</span></td>
-                            <td>{{ link.data_vinculo|date:'d/m/Y'|default:'—' }}</td>
+                            <td class="mono">{{ link.numero_telefone }}</td>
+                            <td><span class="status-pill status-pill--{{ link.status|badge_color }}">{{ link.get_status_display }}</span></td>
+                            <td class="text-muted small">{{ link.data_vinculo|date:'d/m/Y'|default:'—' }}</td>
                         </tr>
                     {% endfor %}
                     </tbody>
@@ -131,9 +111,9 @@
                 {% if business_manager %}
                 <table class="table table-sm mb-0">
                     <tr><th>Nome</th><td>{{ business_manager.nome_bm }}</td></tr>
-                    <tr><th>ID</th><td>{{ business_manager.bm_id }}</td></tr>
-                    <tr><th>Status</th><td><span class="badge bg-{{ business_manager.status|badge_color }}">{{ business_manager.get_status_display }}</span></td></tr>
-                    <tr><th>Gerado em</th><td>{{ business_manager.data_geracao|date:'d/m/Y'|default:'—' }}</td></tr>
+                    <tr><th>ID</th><td class="mono">{{ business_manager.bm_id }}</td></tr>
+                    <tr><th>Status</th><td><span class="status-pill status-pill--{{ business_manager.status|badge_color }}">{{ business_manager.get_status_display }}</span></td></tr>
+                    <tr><th>Gerado em</th><td class="text-muted small">{{ business_manager.data_geracao|date:'d/m/Y'|default:'—' }}</td></tr>
                 </table>
                 {% else %}
                 <p class="text-muted mb-0">Business Manager ainda não gerado.</p>
@@ -154,13 +134,13 @@
     <div class="col-lg-6">
         <div class="card">
             <div class="card-body">
-                <h6 class="card-title"><i class="bi bi-clock-history"></i> Histórico de fases (auditoria)</h6>
-                <ul class="list-group list-group-flush">
+                <h6 class="card-title mb-3"><i class="bi bi-clock-history"></i> Histórico de fases (auditoria)</h6>
+                <ul class="v-timeline">
                     {% for item in historico %}
-                    <li class="list-group-item">
+                    <li class="v-timeline__item">
                         <div class="d-flex justify-content-between">
                             <span class="fw-semibold">{{ item.get_fase_display }}</span>
-                            <small class="text-muted">{{ item.data_hora|date:'d/m/Y H:i' }}</small>
+                            <small class="text-muted mono">{{ item.data_hora|date:'d/m/Y H:i' }}</small>
                         </div>
                         <div class="small text-muted">
                             {% if item.usuario %}por {{ item.usuario }}{% endif %}
@@ -170,11 +150,13 @@
                         {% endif %}
                     </li>
                     {% empty %}
-                    <li class="list-group-item text-muted">Sem histórico registrado.</li>
+                    <li class="text-muted">Sem histórico registrado.</li>
                     {% endfor %}
                 </ul>
             </div>
         </div>
     </div>
 </div>
+
+{% include 'profiles/_advance_modal.html' with perfil=perfil %}
 {% endblock %}

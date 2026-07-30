@@ -125,6 +125,23 @@ class Profile(models.Model):
         return reverse('profiles:profile_detail', args=[self.pk])
 
     @property
+    def fase_index(self):
+        ordem = Phase.ordered_values()
+        try:
+            return ordem.index(self.fase_atual)
+        except ValueError:
+            return 0
+
+    @property
+    def fases_concluidas(self):
+        return Phase.ordered_values()[:self.fase_index]
+
+    @property
+    def fase_progress_percent(self):
+        ordem = Phase.ordered_values()
+        return round(self.fase_index / (len(ordem) - 1) * 100)
+
+    @property
     def proxima_fase(self):
         ordem = Phase.ordered_values()
         try:

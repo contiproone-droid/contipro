@@ -2,7 +2,7 @@ from django import template
 
 register = template.Library()
 
-BADGE_COLORS = {
+PILL_MODIFIERS = {
     'ativo': 'success',
     'criada': 'success',
     'vinculado': 'success',
@@ -10,7 +10,7 @@ BADGE_COLORS = {
     'pendente': 'warning',
     'suspenso': 'warning',
     'restrito': 'warning',
-    'pausado': 'secondary',
+    'pausado': 'neutral',
     'banido': 'danger',
     'falhou': 'danger',
 }
@@ -18,4 +18,4 @@ BADGE_COLORS = {
 
 @register.filter
 def badge_color(value):
-    return BADGE_COLORS.get(value, 'secondary')
+    return PILL_MODIFIERS.get(value, 'neutral')

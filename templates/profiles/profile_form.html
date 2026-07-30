@@ -1,10 +1,13 @@
 {% extends 'base.html' %}
 {% block title %}{{ titulo }}{% endblock %}
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h3 class="mb-0"><i class="bi bi-person-lines-fill"></i> {{ titulo }}</h3>
+<div class="page-header">
+    <div>
+        <p class="page-header__eyebrow">Perfil</p>
+        <h1 class="page-header__title">{{ titulo }}</h1>
+    </div>
     {% if perfil %}
-    <a href="{% url 'profiles:profile_detail' perfil.pk %}" class="btn btn-outline-secondary btn-sm">
+    <a href="{% url 'profiles:profile_detail' perfil.pk %}" class="btn btn-outline-ink btn-sm">
         <i class="bi bi-arrow-left"></i> Voltar ao perfil
     </a>
     {% endif %}
@@ -77,8 +80,8 @@
             {% endif %}
 
             <div class="mt-4">
-                <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> Salvar</button>
-                <a href="{% url 'profiles:profile_list' %}" class="btn btn-link">Cancelar</a>
+                <button type="submit" class="btn btn-brand"><i class="bi bi-check-lg"></i> Salvar</button>
+                <a href="{% url 'profiles:profile_list' %}" class="btn btn-link text-decoration-none">Cancelar</a>
             </div>
         </form>
     </div>

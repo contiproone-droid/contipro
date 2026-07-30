@@ -1,0 +1,40 @@
+{% comment %}
+Uso: {% include 'profiles/_advance_modal.html' with perfil=perfil %}
+Requer um botão gatilho em algum lugar da página com:
+  data-bs-toggle="modal" data-bs-target="#advanceModal{{ perfil.pk }}"
+{% endcomment %}
+<div class="modal fade" id="advanceModal{{ perfil.pk }}" tabindex="-1" aria-labelledby="advanceModalLabel{{ perfil.pk }}" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="post" action="{% url 'profiles:profile_advance_phase' perfil.pk %}">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title" id="advanceModalLabel{{ perfil.pk }}">Avançar fase</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-muted small mb-1">{{ perfil.nome }}</p>
+                    {% if perfil.proxima_fase %}
+                        <p class="mb-3">
+                            De <strong>{{ perfil.get_fase_atual_display }}</strong> para
+                            <strong>{{ perfil.proxima_fase.label }}</strong>.
+                        </p>
+                        <label class="form-label small" for="obs-{{ perfil.pk }}">Observação (opcional)</label>
+                        <textarea class="form-control" id="obs-{{ perfil.pk }}" name="observacao" rows="3"
+                            placeholder="Ex: link da página criada, número vinculado, ID do BM..."></textarea>
+                    {% else %}
+                        <p class="mb-0">Este perfil já está concluído — não há próxima fase.</p>
+                    {% endif %}
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-link text-decoration-none" data-bs-dismiss="modal">Cancelar</button>
+                    {% if perfil.proxima_fase %}
+                        <button type="submit" class="btn btn-brand">
+                            <i class="bi bi-arrow-right-circle"></i> Avançar
+                        </button>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
