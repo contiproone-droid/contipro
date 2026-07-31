@@ -55,3 +55,37 @@ class PipelineStageModelTests(TestCase):
         perfil = Profile.objects.create(nome='Teste', email='t@example.com', senha='x')
         entrada = perfil.historico_fases.get()
         self.assertEqual(entrada.fase_nome, perfil.fase_atual.nome)
+
+
+class ProfileViewsPipelineStageTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username='qa', password='senha-forte-123')
+        self.client = Client()
+        self.client.login(username='qa', password='senha-forte-123')
+
+    def test_filtro_por_fase_na_listagem(self):
+        segunda = PipelineStage.objects.order_by('ordem')[1]
+        Profile.objects.create(nome='Alvo', email='a@example.com', senha='x', fase_atual=segunda)
+        Profile.objects.create(nome='Outro', email='b@example.com', senha='x')
+
+        resp = self.client.get(reverse('profiles:profile_list'), {'fase': segunda.pk})
+        self.assertContains(resp, 'Alvo')
+        self.assertNotContains(resp, 'Outro')
+
+    def test_api_dashboard_data_inclui_ordem_por_fase(self):
+        resp = self.client.get(reverse('profiles:api_dashboard_data'))
+        data = resp.json()
+        self.assertEqual(len(data['funil']), 7)
+        self.assertEqual(data['funil'][0]['ordem'], 1)
+        self.assertEqual(data['funil'][-1]['ordem'], 7)
+
+    def test_dashboard_conta_concluidos_pela_ultima_fase(self):
+        ultima = PipelineStage.objects.order_by('-ordem').first()
+        Profile.objects.create(nome='Feito', email='f@example.com', senha='x', fase_atual=ultima)
+        resp = self.client.get(reverse('profiles:dashboard'))
+        self.assertEqual(resp.context['concluidos_total'], 1)
+
+    def test_avancar_fase_view_usa_nome_da_fase(self):
+        perfil = Profile.objects.create(nome='Teste', email='t@example.com', senha='x')
+        resp = self.client.post(reverse('profiles:profile_advance_phase', args=[perfil.pk]), follow=True)
+        self.assertContains(resp, 'Login/acesso ao perfil no Facebook')
