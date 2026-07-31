@@ -1,14 +1,14 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
-from django.db.models import Count, Max, Q
+from django.db.models import Max, Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from .forms import PhaseAdvanceForm, PipelineStageForm, ProfileFilterForm, ProfileForm
-from .models import PipelineStage, Profile, ProfileStatus
+from .models import PipelineRoute, PipelineStage, Profile, ProfileStatus
 
 
 @login_required
@@ -166,8 +166,20 @@ def api_dashboard_data(request):
 
 @login_required
 def pipeline_configure(request):
-    stages = PipelineStage.objects.order_by('ordem').annotate(total_perfis=Count('perfis'))
-    return render(request, 'profiles/pipeline_configure.html', {'stages': stages})
+    return render(request, 'profiles/pipeline_configure.html')
+
+
+@login_required
+def pipeline_graph_data(request):
+    stages = [
+        {'id': s.pk, 'nome': s.nome, 'x': s.posicao_x, 'y': s.posicao_y}
+        for s in PipelineStage.objects.order_by('ordem')
+    ]
+    routes = [
+        {'id': r.pk, 'origem': r.origem_id, 'destino': r.destino_id, 'rotulo': r.rotulo}
+        for r in PipelineRoute.objects.all()
+    ]
+    return JsonResponse({'stages': stages, 'routes': routes})
 
 
 @login_required
@@ -178,11 +190,11 @@ def pipeline_stage_create(request):
     if form.is_valid():
         stage = form.save(commit=False)
         stage.ordem = proxima_ordem
+        stage.posicao_x = int(request.POST.get('x', 0))
+        stage.posicao_y = int(request.POST.get('y', 0))
         stage.save()
-        messages.success(request, f'Fase "{stage.nome}" adicionada.')
-    else:
-        messages.error(request, 'Informe um nome para a nova fase.')
-    return redirect('profiles:pipeline_configure')
+        return JsonResponse({'ok': True, 'stage': {'id': stage.pk, 'nome': stage.nome}})
+    return JsonResponse({'ok': False, 'errors': form.errors}, status=400)
 
 
 @login_required
@@ -192,28 +204,63 @@ def pipeline_stage_rename(request, pk):
     form = PipelineStageForm(request.POST, instance=stage)
     if form.is_valid():
         form.save()
-        messages.success(request, 'Fase renomeada.')
-    else:
-        messages.error(request, 'Informe um nome para a fase.')
-    return redirect('profiles:pipeline_configure')
+        return JsonResponse({'ok': True, 'stage': {'id': stage.pk, 'nome': stage.nome}})
+    return JsonResponse({'ok': False, 'errors': form.errors}, status=400)
+
+
+@login_required
+@require_POST
+def pipeline_stage_move(request, pk):
+    stage = get_object_or_404(PipelineStage, pk=pk)
+    stage.posicao_x = int(request.POST.get('x', stage.posicao_x))
+    stage.posicao_y = int(request.POST.get('y', stage.posicao_y))
+    stage.save(update_fields=['posicao_x', 'posicao_y'])
+    return JsonResponse({'ok': True})
 
 
 @login_required
 @require_POST
 def pipeline_stage_delete(request, pk):
     stage = get_object_or_404(PipelineStage, pk=pk)
-    nome = stage.nome
+    destino_pk = request.POST.get('destino')
+    destino = get_object_or_404(PipelineStage, pk=destino_pk) if destino_pk else None
     try:
-        stage.excluir_e_realocar(usuario=request.user)
-        messages.success(request, f'Fase "{nome}" removida.')
+        stage.excluir_e_realocar(destino=destino, usuario=request.user)
+        return JsonResponse({'ok': True})
     except ValueError as exc:
-        messages.error(request, str(exc))
-    return redirect('profiles:pipeline_configure')
+        reason = 'precisa_destino' if 'destino' in str(exc) else 'ultima_fase'
+        return JsonResponse({'ok': False, 'reason': reason, 'message': str(exc)}, status=400)
 
 
 @login_required
 @require_POST
-def pipeline_stage_reorder(request):
-    pks = [int(pk) for pk in request.POST.getlist('pk')]
-    PipelineStage.reordenar(pks)
+def pipeline_route_create(request):
+    origem = get_object_or_404(PipelineStage, pk=request.POST.get('origem'))
+    destino = get_object_or_404(PipelineStage, pk=request.POST.get('destino'))
+    rotulo = request.POST.get('rotulo', '').strip() or 'Padrão'
+    rota, created = PipelineRoute.objects.get_or_create(
+        origem=origem, destino=destino, defaults={'rotulo': rotulo},
+    )
+    if not created:
+        return JsonResponse({'ok': False, 'reason': 'ja_existe'}, status=400)
+    return JsonResponse({'ok': True, 'route': {'id': rota.pk, 'rotulo': rota.rotulo}})
+
+
+@login_required
+@require_POST
+def pipeline_route_delete(request, pk):
+    rota = get_object_or_404(PipelineRoute, pk=pk)
+    rota.delete()
     return JsonResponse({'ok': True})
+
+
+@login_required
+def profile_traversal_data(request, pk):
+    perfil = get_object_or_404(Profile, pk=pk)
+    visited_ids = list(
+        perfil.historico_fases.exclude(fase_stage=None)
+        .order_by('data_hora')
+        .values_list('fase_stage_id', flat=True)
+        .distinct()
+    )
+    return JsonResponse({'visited_stage_ids': visited_ids, 'current_stage_id': perfil.fase_atual_id})
