@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth.forms import AuthenticationForm
 
-from .models import Phase, Profile, ProfileStatus
+from .models import PipelineStage, Profile, ProfileStatus
 
 
 class StyledAuthenticationForm(AuthenticationForm):
@@ -88,10 +88,11 @@ class ProfileFilterForm(forms.Form):
             'placeholder': 'Nome, e-mail ou ID do AdsPower',
         }),
     )
-    fase = forms.ChoiceField(
+    fase = forms.ModelChoiceField(
         label='Fase',
         required=False,
-        choices=[('', 'Todas as fases')] + list(Phase.choices),
+        queryset=PipelineStage.objects.order_by('ordem'),
+        empty_label='Todas as fases',
         widget=forms.Select(attrs={'class': 'form-select'}),
     )
     status = forms.ChoiceField(

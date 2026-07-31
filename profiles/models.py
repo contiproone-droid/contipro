@@ -1,32 +1,60 @@
 from django.conf import settings
-from django.db import models
+from django.db import models, transaction
 from django.urls import reverse
 from django.utils import timezone
 from encrypted_model_fields.fields import EncryptedCharField, EncryptedTextField
 
 
-class Phase(models.TextChoices):
-    """As 7 fases do fluxo de criação de contas Facebook Business Manager."""
+def fase_inicial_default():
+    stage = PipelineStage.objects.order_by('ordem').first()
+    return stage.pk if stage else None
 
-    PERFIL_CRIADO = 'perfil_criado', '1. Perfil criado no AdsPower'
-    LOGIN_FACEBOOK = 'login_facebook', '2. Login/acesso ao perfil no Facebook'
-    VERIFICACAO_PAGINA = 'verificacao_pagina', '3. Verificação de página do Facebook'
-    CRIACAO_PAGINA = 'criacao_pagina', '4. Criação da página'
-    VINCULO_WHATSAPP = 'vinculo_whatsapp', '5. Vínculo da conta do WhatsApp'
-    GERACAO_BM = 'geracao_bm', '6. Geração do Business Manager'
-    CONCLUIDO = 'concluido', '7. Concluído / Ativo'
 
-    @classmethod
-    def ordered_values(cls):
-        return [
-            cls.PERFIL_CRIADO,
-            cls.LOGIN_FACEBOOK,
-            cls.VERIFICACAO_PAGINA,
-            cls.CRIACAO_PAGINA,
-            cls.VINCULO_WHATSAPP,
-            cls.GERACAO_BM,
-            cls.CONCLUIDO,
-        ]
+class PipelineStage(models.Model):
+    """Uma fase do pipeline, editável via UI (tela 'Configurar pipeline')."""
+
+    nome = models.CharField('Nome da fase', max_length=150)
+    ordem = models.PositiveIntegerField('Ordem', unique=True)
+
+    class Meta:
+        ordering = ['ordem']
+        verbose_name = 'Fase do pipeline'
+        verbose_name_plural = 'Fases do pipeline'
+
+    def __str__(self):
+        return self.nome
+
+    def excluir_e_realocar(self, usuario=None):
+        """Apaga a fase, movendo perfis afetados para a fase vizinha e registrando
+        auditoria. Levanta ValueError se for a última fase restante do pipeline."""
+        todas = list(PipelineStage.objects.order_by('ordem'))
+        if len(todas) <= 1:
+            raise ValueError('Não é possível apagar a última fase restante do pipeline.')
+
+        idx = todas.index(self)
+        destino = todas[1] if idx == 0 else todas[idx - 1]
+
+        with transaction.atomic():
+            for perfil in Profile.objects.filter(fase_atual=self):
+                perfil.fase_atual = destino
+                perfil.save(update_fields=['fase_atual', 'atualizado_em'])
+                PhaseHistory.objects.create(
+                    perfil=perfil,
+                    fase_nome=destino.nome,
+                    usuario=usuario,
+                    observacao='Movido automaticamente: a fase anterior foi removida do pipeline.',
+                )
+            self.delete()
+
+    @staticmethod
+    def reordenar(pks_em_ordem):
+        """Recebe uma lista de PKs de PipelineStage na nova ordem desejada e persiste.
+        Usa um deslocamento temporário para não violar a constraint unique de 'ordem'."""
+        with transaction.atomic():
+            for indice, pk in enumerate(pks_em_ordem):
+                PipelineStage.objects.filter(pk=pk).update(ordem=10_000 + indice)
+            for indice, pk in enumerate(pks_em_ordem):
+                PipelineStage.objects.filter(pk=pk).update(ordem=indice + 1)
 
 
 class AuthType(models.TextChoices):
@@ -89,11 +117,12 @@ class Profile(models.Model):
         blank=True,
         help_text='ID do perfil no AdsPower (ex: kp0a1b2c3d4).',
     )
-    fase_atual = models.CharField(
-        'Fase atual',
-        max_length=30,
-        choices=Phase.choices,
-        default=Phase.PERFIL_CRIADO,
+    fase_atual = models.ForeignKey(
+        'PipelineStage',
+        verbose_name='Fase atual',
+        on_delete=models.PROTECT,
+        default=fase_inicial_default,
+        related_name='perfis',
     )
     status = models.CharField(
         'Status',
@@ -126,7 +155,7 @@ class Profile(models.Model):
 
     @property
     def fase_index(self):
-        ordem = Phase.ordered_values()
+        ordem = list(PipelineStage.objects.order_by('ordem'))
         try:
             return ordem.index(self.fase_atual)
         except ValueError:
@@ -134,16 +163,20 @@ class Profile(models.Model):
 
     @property
     def fases_concluidas(self):
-        return Phase.ordered_values()[:self.fase_index]
+        ordem = list(PipelineStage.objects.order_by('ordem'))
+        return ordem[:self.fase_index]
 
     @property
     def fase_progress_percent(self):
-        ordem = Phase.ordered_values()
-        return round(self.fase_index / (len(ordem) - 1) * 100)
+        ordem = list(PipelineStage.objects.order_by('ordem'))
+        total = len(ordem) - 1
+        if total <= 0:
+            return 100
+        return round(self.fase_index / total * 100)
 
     @property
     def proxima_fase(self):
-        ordem = Phase.ordered_values()
+        ordem = list(PipelineStage.objects.order_by('ordem'))
         try:
             idx = ordem.index(self.fase_atual)
         except ValueError:
@@ -154,7 +187,7 @@ class Profile(models.Model):
 
     @property
     def is_concluido(self):
-        return self.fase_atual == Phase.CONCLUIDO
+        return self.proxima_fase is None
 
     def avancar_fase(self, usuario=None, observacao=''):
         """Avança o perfil para a próxima fase e registra no histórico. Retorna True se avançou."""
@@ -165,7 +198,7 @@ class Profile(models.Model):
         self.save(update_fields=['fase_atual', 'atualizado_em'])
         PhaseHistory.objects.create(
             perfil=self,
-            fase=proxima,
+            fase_nome=proxima.nome,
             usuario=usuario,
             observacao=observacao,
         )
@@ -181,7 +214,7 @@ class PhaseHistory(models.Model):
         on_delete=models.CASCADE,
         related_name='historico_fases',
     )
-    fase = models.CharField('Fase', max_length=30, choices=Phase.choices)
+    fase_nome = models.CharField('Fase', max_length=150)
     data_hora = models.DateTimeField('Data/hora da mudança', default=timezone.now)
     usuario = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -198,7 +231,7 @@ class PhaseHistory(models.Model):
         verbose_name_plural = 'Histórico de fases'
 
     def __str__(self):
-        return f'{self.perfil.nome} → {self.get_fase_display()}'
+        return f'{self.perfil.nome} → {self.fase_nome}'
 
 
 class PageInfo(models.Model):

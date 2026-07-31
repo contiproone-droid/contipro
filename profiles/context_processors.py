@@ -1,5 +1,5 @@
-from .models import Phase
+from .models import PipelineStage
 
 
 def fases_ordenadas(request):
-    return {'fases_ordenadas': Phase.ordered_values()}
+    return {'fases_ordenadas': PipelineStage.objects.order_by('ordem')}

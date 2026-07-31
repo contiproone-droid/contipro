@@ -4,6 +4,7 @@ from .models import (
     BusinessManager,
     PageInfo,
     PhaseHistory,
+    PipelineStage,
     Profile,
     WhatsAppLink,
 )
@@ -12,7 +13,7 @@ from .models import (
 class PhaseHistoryInline(admin.TabularInline):
     model = PhaseHistory
     extra = 0
-    readonly_fields = ('fase', 'data_hora', 'usuario', 'observacao')
+    readonly_fields = ('fase_nome', 'data_hora', 'usuario', 'observacao')
     can_delete = False
     ordering = ('-data_hora',)
 
@@ -73,8 +74,8 @@ class ProfileAdmin(admin.ModelAdmin):
 
 @admin.register(PhaseHistory)
 class PhaseHistoryAdmin(admin.ModelAdmin):
-    list_display = ('perfil', 'fase', 'data_hora', 'usuario')
-    list_filter = ('fase',)
+    list_display = ('perfil', 'fase_nome', 'data_hora', 'usuario')
+    list_filter = ('fase_nome',)
     search_fields = ('perfil__nome', 'perfil__email')
     autocomplete_fields = ('perfil', 'usuario')
     date_hierarchy = 'data_hora'
@@ -102,3 +103,9 @@ class BusinessManagerAdmin(admin.ModelAdmin):
     list_filter = ('status',)
     search_fields = ('nome_bm', 'bm_id', 'perfil__nome')
     autocomplete_fields = ('perfil',)
+
+
+@admin.register(PipelineStage)
+class PipelineStageAdmin(admin.ModelAdmin):
+    list_display = ('nome', 'ordem')
+    ordering = ('ordem',)

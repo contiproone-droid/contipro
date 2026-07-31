@@ -10,7 +10,7 @@ def registrar_fase_inicial(sender, instance, created, **kwargs):
     if created:
         PhaseHistory.objects.create(
             perfil=instance,
-            fase=instance.fase_atual,
+            fase_nome=instance.fase_atual.nome,
             usuario=instance.responsavel,
             observacao='Perfil criado.',
         )

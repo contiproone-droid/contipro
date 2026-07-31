@@ -8,7 +8,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from .forms import PhaseAdvanceForm, ProfileFilterForm, ProfileForm
-from .models import Phase, Profile, ProfileStatus
+from .models import PipelineStage, Profile, ProfileStatus
 
 
 @login_required
@@ -111,7 +111,7 @@ def profile_advance_phase(request, pk):
     observacao = form.cleaned_data.get('observacao', '') if form.is_valid() else ''
 
     if perfil.avancar_fase(usuario=request.user, observacao=observacao):
-        messages.success(request, f'Perfil avançado para "{perfil.get_fase_atual_display()}".')
+        messages.success(request, f'Perfil avançado para "{perfil.fase_atual.nome}".')
     else:
         messages.info(request, 'Este perfil já está na última fase (Concluído / Ativo).')
 
@@ -123,12 +123,13 @@ def dashboard(request):
     total_perfis = Profile.objects.count()
     agora = timezone.localtime()
 
+    ultima_fase = PipelineStage.objects.order_by('-ordem').first()
     concluidos_mes = Profile.objects.filter(
-        fase_atual=Phase.CONCLUIDO,
+        fase_atual=ultima_fase,
         atualizado_em__year=agora.year,
         atualizado_em__month=agora.month,
-    ).count()
-    concluidos_total = Profile.objects.filter(fase_atual=Phase.CONCLUIDO).count()
+    ).count() if ultima_fase else 0
+    concluidos_total = Profile.objects.filter(fase_atual=ultima_fase).count() if ultima_fase else 0
     taxa_conversao = (concluidos_total / total_perfis * 100) if total_perfis else 0
 
     perfis_recentes = Profile.objects.select_related('responsavel').order_by('-atualizado_em')[:10]
@@ -145,8 +146,8 @@ def dashboard(request):
 @login_required
 def api_dashboard_data(request):
     funil = [
-        {'fase': label, 'total': Profile.objects.filter(fase_atual=value).count()}
-        for value, label in Phase.choices
+        {'fase': stage.nome, 'ordem': stage.ordem, 'total': Profile.objects.filter(fase_atual=stage).count()}
+        for stage in PipelineStage.objects.order_by('ordem')
     ]
     status_data = [
         {'status': label, 'total': Profile.objects.filter(status=value).count()}
