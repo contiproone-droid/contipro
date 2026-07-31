@@ -50,8 +50,8 @@
 
 <div class="card mb-3">
     <div class="card-body">
-        <h6 class="card-title mb-3"><span class="section-icon"><i class="ph-bold ph-flow-arrow"></i></span> Progresso do pipeline</h6>
-        {% include 'profiles/_pipeline_track.html' with perfil=perfil size='full' %}
+        <h6 class="card-title mb-3"><span class="section-icon"><i class="ph-bold ph-flow-arrow"></i></span> Mapa do pipeline</h6>
+        {% include 'profiles/_pipeline_map.html' with canvas_id='pipelineMap' traversal_url=traversal_url %}
         {% if perfil.is_concluido %}
         <div class="alert alert-success mt-3 mb-0"><i class="ph-bold ph-check-circle"></i> Perfil concluído — todas as fases finalizadas.</div>
         {% endif %}

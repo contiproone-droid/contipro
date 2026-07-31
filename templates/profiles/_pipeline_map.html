@@ -1,0 +1,63 @@
+{% comment %}
+Uso: {% include 'profiles/_pipeline_map.html' with canvas_id='pipelineMap' traversal_url=traversal_url %}
+Canvas Drawflow somente-leitura, com o caminho percorrido pelo perfil destacado.
+{% endcomment %}
+<div id="{{ canvas_id }}" class="pipeline-map" data-graph-url="{% url 'profiles:pipeline_graph_data' %}" data-traversal-url="{{ traversal_url }}"></div>
+<script>
+(function () {
+    function loadDrawflowOnce(callback) {
+        if (window.Drawflow) { callback(); return; }
+        if (window._drawflowLoading) { window._drawflowLoading.then(callback); return; }
+        var css = document.createElement('link');
+        css.rel = 'stylesheet';
+        css.href = 'https://cdn.jsdelivr.net/npm/drawflow@0.0.60/dist/drawflow.min.css';
+        css.integrity = 'sha384-IFh+Q6zh+LRcTjqVmAKetdGY59dT485vtvWT5DAKQy8iv5+fYWHXisHP7mFKcFqV';
+        css.crossOrigin = 'anonymous';
+        document.head.appendChild(css);
+        window._drawflowLoading = new Promise(function (resolve) {
+            var script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/drawflow@0.0.60/dist/drawflow.min.js';
+            script.integrity = 'sha384-JsnM4f1X8b5e9VbQCj6Bt6840HQNDYVKohzbXJnqOetMno8i6cmKNLVkyK3snqSw';
+            script.crossOrigin = 'anonymous';
+            script.onload = resolve;
+            document.head.appendChild(script);
+        });
+        window._drawflowLoading.then(callback);
+    }
+
+    function renderMap(containerId) {
+        var container = document.getElementById(containerId);
+        if (!container || container.dataset.rendered || !container.dataset.traversalUrl) return;
+        container.dataset.rendered = '1';
+        var editor = new Drawflow(container);
+        editor.editor_mode = 'view';
+        editor.start();
+
+        Promise.all([
+            fetch(container.dataset.graphUrl).then(function (r) { return r.json(); }),
+            fetch(container.dataset.traversalUrl).then(function (r) { return r.json(); }),
+        ]).then(function (results) {
+            var graph = results[0], traversal = results[1];
+            var stageIdByNodeId = {};
+            graph.stages.forEach(function (stage) {
+                var visited = traversal.visited_stage_ids.indexOf(stage.id) !== -1;
+                var current = traversal.current_stage_id === stage.id;
+                var cls = current ? 'pipeline-node pipeline-node--current' : (visited ? 'pipeline-node pipeline-node--visited' : 'pipeline-node');
+                var nodeId = editor.addNode('stage', 1, 1, stage.x, stage.y, 'stage-' + stage.id, {}, '<div class="' + cls + '"><span class="pipeline-node__name">' + stage.nome + '</span></div>');
+                stageIdByNodeId[nodeId] = stage.id;
+            });
+            graph.routes.forEach(function (route) {
+                var o = Object.keys(stageIdByNodeId).find(function (k) { return stageIdByNodeId[k] === route.origem; });
+                var d = Object.keys(stageIdByNodeId).find(function (k) { return stageIdByNodeId[k] === route.destino; });
+                if (o && d) editor.addConnection(o, d, 'output_1', 'input_1');
+            });
+        });
+    }
+
+    window.renderPipelineMapInto = renderMap;
+
+    document.addEventListener('DOMContentLoaded', function () {
+        loadDrawflowOnce(function () { renderMap('{{ canvas_id }}'); });
+    });
+})();
+</script>

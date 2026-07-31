@@ -9,7 +9,7 @@
     .pipeline-node__name:focus { outline: none; border-bottom: 1px solid var(--accent-on-surface); }
     .pipeline-node__delete { background: none; border: none; color: var(--text-muted); padding: 0; margin-left: .4rem; }
     .pipeline-node__delete:hover { color: var(--status-danger); }
-    .drawflow .drawflow-node { padding: 0; }
+    .drawflow .drawflow-node { padding: 0; width: auto; background: transparent; border: none; color: inherit; }
     .drawflow .connection .main-path { stroke: var(--text-muted); stroke-width: 2px; }
     .drawflow .connection .main-path:hover { stroke: var(--signal-amber); }
 </style>
@@ -53,6 +53,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     var stageIdByNodeId = {};
+    var importingGraph = true;
 
     function wireNode(nodeId, stageId) {
         var el = document.getElementById('node-' + nodeId);
@@ -99,6 +100,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 editor.addConnection(origemNodeId, destinoNodeId, 'output_1', 'input_1');
             }
         });
+
+        importingGraph = false;
     });
 
     editor.on('nodeMoved', function (nodeId) {
@@ -107,6 +110,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     editor.on('connectionCreated', function (info) {
+        if (importingGraph) return;
         var rotulo = prompt('Rótulo desta rota (ex: Padrão, Falhou):', 'Padrão');
         if (rotulo === null) { editor.removeSingleConnection(info.output_id, info.input_id, info.output_class, info.input_class); return; }
         post("{% url 'profiles:pipeline_route_create' %}", {

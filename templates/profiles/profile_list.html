@@ -57,8 +57,10 @@
                     </td>
                     <td class="mono text-muted">{{ perfil.adspower_id|default:'—' }}</td>
                     <td>
-                        {% include 'profiles/_pipeline_track.html' with perfil=perfil size='mini' %}
-                        <div class="text-muted small mt-1">{{ perfil.fase_atual.nome }}</div>
+                        <div class="text-muted small mb-1">{{ perfil.fase_atual.nome }}</div>
+                        <button type="button" class="btn btn-sm btn-outline-ink" data-bs-toggle="modal" data-bs-target="#mapModal" data-traversal-url="{% url 'profiles:profile_traversal_data' perfil.pk %}">
+                            <i class="ph-bold ph-flow-arrow"></i> Ver mapa
+                        </button>
                     </td>
                     <td><span class="status-pill status-pill--{{ perfil.status|badge_color }}">{{ perfil.get_status_display }}</span></td>
                     <td>{{ perfil.responsavel|default:'—' }}</td>
@@ -107,4 +109,30 @@
 {% for perfil in perfis %}
     {% include 'profiles/_advance_modal.html' with perfil=perfil %}
 {% endfor %}
+
+<div class="modal fade" id="mapModal" tabindex="-1" aria-labelledby="mapModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="mapModalLabel">
+                    <span class="modal-icon-badge"><i class="ph-bold ph-flow-arrow"></i></span>
+                    Mapa do pipeline
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                {% include 'profiles/_pipeline_map.html' with canvas_id='mapModalCanvas' traversal_url='' %}
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+document.getElementById('mapModal').addEventListener('show.bs.modal', function (event) {
+    var container = document.getElementById('mapModalCanvas');
+    container.innerHTML = '';
+    container.dataset.rendered = '';
+    container.dataset.traversalUrl = event.relatedTarget.dataset.traversalUrl;
+    if (window.renderPipelineMapInto) { window.renderPipelineMapInto('mapModalCanvas'); }
+});
+</script>
 {% endblock %}

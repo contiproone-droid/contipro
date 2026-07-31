@@ -4,6 +4,7 @@ from django.core.paginator import Paginator
 from django.db.models import Max, Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
@@ -100,6 +101,7 @@ def profile_detail(request, pk):
         'paginas': perfil.paginas.all(),
         'whatsapp_links': perfil.whatsapp_links.all(),
         'business_manager': business_manager,
+        'traversal_url': reverse('profiles:profile_traversal_data', args=[perfil.pk]),
     })
 
 
