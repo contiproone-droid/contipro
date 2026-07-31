@@ -5,6 +5,15 @@ Canvas Drawflow somente-leitura, com o caminho percorrido pelo perfil destacado.
 <div id="{{ canvas_id }}" class="pipeline-map" data-graph-url="{% url 'profiles:pipeline_graph_data' %}" data-traversal-url="{{ traversal_url }}"></div>
 <script>
 (function () {
+    function escapeHtml(str) {
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
     function loadDrawflowOnce(callback) {
         if (window.Drawflow) { callback(); return; }
         if (window._drawflowLoading) { window._drawflowLoading.then(callback); return; }
@@ -43,7 +52,7 @@ Canvas Drawflow somente-leitura, com o caminho percorrido pelo perfil destacado.
                 var visited = traversal.visited_stage_ids.indexOf(stage.id) !== -1;
                 var current = traversal.current_stage_id === stage.id;
                 var cls = current ? 'pipeline-node pipeline-node--current' : (visited ? 'pipeline-node pipeline-node--visited' : 'pipeline-node');
-                var nodeId = editor.addNode('stage', 1, 1, stage.x, stage.y, 'stage-' + stage.id, {}, '<div class="' + cls + '"><span class="pipeline-node__name">' + stage.nome + '</span></div>');
+                var nodeId = editor.addNode('stage', 1, 1, stage.x, stage.y, 'stage-' + stage.id, {}, '<div class="' + cls + '"><span class="pipeline-node__name">' + escapeHtml(stage.nome) + '</span></div>');
                 stageIdByNodeId[nodeId] = stage.id;
             });
             graph.routes.forEach(function (route) {

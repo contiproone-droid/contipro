@@ -45,9 +45,18 @@ document.addEventListener('DOMContentLoaded', function () {
             .then(function (r) { return r.json().then(function (data) { return { status: r.status, data: data }; }); });
     }
 
+    function escapeHtml(str) {
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
     function nodeHtml(nome) {
         return '<div class="pipeline-node">' +
-            '<input class="pipeline-node__name" value="' + nome.replace(/"/g, '&quot;') + '" readonly>' +
+            '<input class="pipeline-node__name" value="' + escapeHtml(nome) + '" readonly>' +
             '<button type="button" class="pipeline-node__delete" title="Apagar"><i class="ph-bold ph-trash"></i></button>' +
             '</div>';
     }
