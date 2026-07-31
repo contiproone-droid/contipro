@@ -9,16 +9,20 @@ Requer um botão gatilho em algum lugar da página com:
             <form method="post" action="{% url 'profiles:profile_advance_phase' perfil.pk %}">
                 {% csrf_token %}
                 <div class="modal-header">
-                    <h5 class="modal-title" id="advanceModalLabel{{ perfil.pk }}">Avançar fase</h5>
+                    <h5 class="modal-title" id="advanceModalLabel{{ perfil.pk }}">
+                        <span class="modal-icon-badge"><i class="bi bi-arrow-right-circle"></i></span>
+                        Avançar fase
+                    </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
                 </div>
                 <div class="modal-body">
-                    <p class="text-muted small mb-1">{{ perfil.nome }}</p>
+                    <p class="text-muted small mb-2">{{ perfil.nome }}</p>
                     {% if perfil.proxima_fase %}
-                        <p class="mb-3">
-                            De <strong>{{ perfil.get_fase_atual_display }}</strong> para
-                            <strong>{{ perfil.proxima_fase.label }}</strong>.
-                        </p>
+                        <div class="phase-transition">
+                            <span class="phase-transition__chip">{{ perfil.get_fase_atual_display }}</span>
+                            <i class="bi bi-arrow-right phase-transition__arrow"></i>
+                            <span class="phase-transition__chip phase-transition__chip--next">{{ perfil.proxima_fase.label }}</span>
+                        </div>
                         <label class="form-label small" for="obs-{{ perfil.pk }}">Observação (opcional)</label>
                         <textarea class="form-control" id="obs-{{ perfil.pk }}" name="observacao" rows="3"
                             placeholder="Ex: link da página criada, número vinculado, ID do BM..."></textarea>

@@ -19,7 +19,7 @@
     <div class="col-md-3">
         <div class="card h-100"><div class="card-body">
             <div class="stat-card__eyebrow">Concluídos neste mês</div>
-            <div class="stat-card__value" style="color: var(--moss-600);">{{ concluidos_mes }}</div>
+            <div class="stat-card__value" style="color: var(--status-success);">{{ concluidos_mes }}</div>
         </div></div>
     </div>
     <div class="col-md-3">
@@ -31,7 +31,7 @@
     <div class="col-md-3">
         <div class="card h-100"><div class="card-body">
             <div class="stat-card__eyebrow">Conversão (fase 1 → 7)</div>
-            <div class="stat-card__value" style="color: var(--signal-amber-text);">{{ taxa_conversao }}%</div>
+            <div class="stat-card__value" style="color: var(--accent-on-surface);">{{ taxa_conversao }}%</div>
         </div></div>
     </div>
 </div>
@@ -51,7 +51,7 @@
         <div class="card h-100">
             <div class="card-body">
                 <h6 class="card-title">Perfis por status</h6>
-                <div style="position: relative; height: 220px;">
+                <div class="donut-wrap">
                     <canvas id="statusChart"></canvas>
                 </div>
             </div>
@@ -96,63 +96,151 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    Chart.defaults.font.family = "'IBM Plex Sans', sans-serif";
-    Chart.defaults.color = '#746650';
+    var funilChart = null;
+    var statusChart = null;
+    var chartData = null;
+
+    function cssVar(name) {
+        return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    }
+
+    function themeColors() {
+        return {
+            text: cssVar('--text-body'),
+            muted: cssVar('--text-muted'),
+            border: cssVar('--border-subtle'),
+            surfaceRaised: cssVar('--bg-surface-raised'),
+            amber: cssVar('--signal-amber'),
+            amberDark: cssVar('--signal-amber-dark'),
+            success: cssVar('--status-success'),
+            danger: cssVar('--status-danger'),
+            neutral: cssVar('--text-muted'),
+        };
+    }
+
+    function tooltipBase(colors) {
+        return {
+            backgroundColor: colors.surfaceRaised,
+            titleColor: colors.text,
+            bodyColor: colors.muted,
+            borderColor: colors.border,
+            borderWidth: 1,
+            cornerRadius: 10,
+            padding: 10,
+            displayColors: false,
+            titleFont: { family: "'IBM Plex Mono', monospace", size: 11 },
+            bodyFont: { family: "'IBM Plex Sans', sans-serif", size: 12 },
+        };
+    }
+
+    function amberGradient(ctx, colors) {
+        var area = ctx.chart.chartArea;
+        if (!area) return colors.amber;
+        var gradient = ctx.chart.ctx.createLinearGradient(area.left, 0, area.right, 0);
+        gradient.addColorStop(0, colors.amberDark);
+        gradient.addColorStop(1, colors.amber);
+        return gradient;
+    }
+
+    function centerTextPlugin(colors, total) {
+        return {
+            id: 'centerText',
+            afterDraw: function (chart) {
+                var meta = chart.getDatasetMeta(0);
+                if (!meta.data.length) return;
+                var arc = meta.data[0];
+                var ctx = chart.ctx;
+                ctx.save();
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillStyle = colors.text;
+                ctx.font = "600 26px 'IBM Plex Mono', monospace";
+                ctx.fillText(String(total), arc.x, arc.y - 9);
+                ctx.fillStyle = colors.muted;
+                ctx.font = "500 10px 'IBM Plex Mono', monospace";
+                ctx.fillText('PERFIS', arc.x, arc.y + 13);
+                ctx.restore();
+            }
+        };
+    }
+
+    function renderCharts() {
+        if (!chartData) return;
+        var colors = themeColors();
+        Chart.defaults.font.family = "'IBM Plex Sans', sans-serif";
+        Chart.defaults.color = colors.muted;
+
+        if (funilChart) funilChart.destroy();
+        if (statusChart) statusChart.destroy();
+
+        var funilLabels = chartData.funil.map(function (item) { return item.fase; });
+        var funilNumeros = funilLabels.map(function (label) { return label.split('.')[0]; });
+        var funilTotais = chartData.funil.map(function (item) { return item.total; });
+
+        funilChart = new Chart(document.getElementById('funilChart'), {
+            type: 'bar',
+            data: {
+                labels: funilNumeros,
+                datasets: [{
+                    label: 'Perfis',
+                    data: funilTotais,
+                    backgroundColor: function (ctx) { return amberGradient(ctx, colors); },
+                    borderRadius: 8,
+                    barThickness: 16,
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                plugins: {
+                    legend: { display: false },
+                    tooltip: Object.assign({
+                        callbacks: {
+                            title: function (items) { return funilLabels[items[0].dataIndex]; }
+                        }
+                    }, tooltipBase(colors))
+                },
+                scales: {
+                    x: { beginAtZero: true, ticks: { precision: 0 }, grid: { color: colors.border } },
+                    y: { grid: { display: false }, ticks: { font: { family: "'IBM Plex Mono', monospace" } } }
+                }
+            }
+        });
+
+        var statusLabels = chartData.status.map(function (item) { return item.status; });
+        var statusTotais = chartData.status.map(function (item) { return item.total; });
+        var statusTotal = statusTotais.reduce(function (sum, n) { return sum + n; }, 0);
+
+        statusChart = new Chart(document.getElementById('statusChart'), {
+            type: 'doughnut',
+            plugins: [centerTextPlugin(colors, statusTotal)],
+            data: {
+                labels: statusLabels,
+                datasets: [{
+                    data: statusTotais,
+                    backgroundColor: [colors.success, colors.danger, colors.amber, colors.neutral],
+                    borderColor: colors.surfaceRaised,
+                    borderWidth: 3,
+                    hoverOffset: 6,
+                }]
+            },
+            options: {
+                cutout: '68%',
+                plugins: {
+                    legend: { position: 'bottom' },
+                    tooltip: tooltipBase(colors),
+                }
+            }
+        });
+    }
 
     fetch("{% url 'profiles:api_dashboard_data' %}")
         .then(function (resp) { return resp.json(); })
         .then(function (data) {
-            var funilLabels = data.funil.map(function (item) { return item.fase; });
-            var funilNumeros = funilLabels.map(function (label) { return label.split('.')[0]; });
-            var funilTotais = data.funil.map(function (item) { return item.total; });
-
-            new Chart(document.getElementById('funilChart'), {
-                type: 'bar',
-                data: {
-                    labels: funilNumeros,
-                    datasets: [{
-                        label: 'Perfis',
-                        data: funilTotais,
-                        backgroundColor: '#dd8b2e',
-                        borderRadius: 4,
-                    }]
-                },
-                options: {
-                    indexAxis: 'y',
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            callbacks: {
-                                title: function (items) { return funilLabels[items[0].dataIndex]; }
-                            }
-                        }
-                    },
-                    scales: {
-                        x: { beginAtZero: true, ticks: { precision: 0 }, grid: { color: '#e4e0d6' } },
-                        y: { grid: { display: false }, ticks: { font: { family: "'IBM Plex Mono', monospace" } } }
-                    }
-                }
-            });
-
-            var statusLabels = data.status.map(function (item) { return item.status; });
-            var statusTotais = data.status.map(function (item) { return item.total; });
-
-            new Chart(document.getElementById('statusChart'), {
-                type: 'pie',
-                data: {
-                    labels: statusLabels,
-                    datasets: [{
-                        data: statusTotais,
-                        backgroundColor: ['#3f7a57', '#b0453a', '#dd8b2e', '#9c8f7a'],
-                        borderColor: '#f6f4ee',
-                        borderWidth: 2,
-                    }]
-                },
-                options: {
-                    plugins: { legend: { position: 'bottom' } }
-                }
-            });
+            chartData = data;
+            renderCharts();
         });
+
+    document.addEventListener('themechange', renderCharts);
 });
 </script>
 {% endblock %}
