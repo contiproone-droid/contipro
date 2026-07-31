@@ -17,26 +17,26 @@ Requer um botão gatilho em algum lugar da página com:
                 </div>
                 <div class="modal-body">
                     <p class="text-muted small mb-2">{{ perfil.nome }}</p>
-                    {% if perfil.proxima_fase %}
-                        <div class="phase-transition">
-                            <span class="phase-transition__chip">{{ perfil.fase_atual.nome }}</span>
-                            <i class="ph-bold ph-arrow-right phase-transition__arrow"></i>
-                            <span class="phase-transition__chip phase-transition__chip--next">{{ perfil.proxima_fase.nome }}</span>
-                        </div>
+                    {% with rotas=perfil.rotas_disponiveis %}
+                    {% if rotas %}
+                        <p class="text-muted small mb-2">Fase atual: <strong>{{ perfil.fase_atual.nome }}</strong></p>
                         <label class="form-label small" for="obs-{{ perfil.pk }}">Observação (opcional)</label>
-                        <textarea class="form-control" id="obs-{{ perfil.pk }}" name="observacao" rows="3"
+                        <textarea class="form-control mb-3" id="obs-{{ perfil.pk }}" name="observacao" rows="3"
                             placeholder="Ex: link da página criada, número vinculado, ID do BM..."></textarea>
+                        <div class="d-flex flex-column gap-2">
+                            {% for rota in rotas %}
+                            <button type="submit" name="destino" value="{{ rota.destino.pk }}" class="btn btn-brand text-start">
+                                <i class="ph-bold ph-arrow-circle-right"></i> {{ rota.rotulo }} → {{ rota.destino.nome }}
+                            </button>
+                            {% endfor %}
+                        </div>
                     {% else %}
                         <p class="mb-0">Este perfil já está concluído — não há próxima fase.</p>
                     {% endif %}
+                    {% endwith %}
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-link text-decoration-none" data-bs-dismiss="modal">Cancelar</button>
-                    {% if perfil.proxima_fase %}
-                        <button type="submit" class="btn btn-brand">
-                            <i class="ph-bold ph-arrow-circle-right"></i> Avançar
-                        </button>
-                    {% endif %}
                 </div>
             </form>
         </div>

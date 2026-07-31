@@ -64,7 +64,7 @@
                     <td>{{ perfil.responsavel|default:'—' }}</td>
                     <td class="text-muted small">{{ perfil.atualizado_em|date:'d/m/Y H:i' }}</td>
                     <td class="text-end">
-                        <button type="button" class="btn btn-sm btn-brand" data-bs-toggle="modal" data-bs-target="#advanceModal{{ perfil.pk }}" {% if not perfil.proxima_fase %}disabled{% endif %}>
+                        <button type="button" class="btn btn-sm btn-brand" data-bs-toggle="modal" data-bs-target="#advanceModal{{ perfil.pk }}" {% if perfil.is_concluido %}disabled{% endif %}>
                             <i class="ph-bold ph-arrow-circle-right"></i> Avançar
                         </button>
                         <a href="{% url 'profiles:profile_detail' perfil.pk %}" class="btn btn-sm btn-outline-ink">

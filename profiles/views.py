@@ -110,10 +110,17 @@ def profile_advance_phase(request, pk):
     form = PhaseAdvanceForm(request.POST)
     observacao = form.cleaned_data.get('observacao', '') if form.is_valid() else ''
 
-    if perfil.avancar_fase(usuario=request.user, observacao=observacao):
+    destino_pk = request.POST.get('destino')
+    if destino_pk:
+        destino = get_object_or_404(PipelineStage, pk=destino_pk)
+    else:
+        rotas = list(perfil.rotas_disponiveis)
+        destino = rotas[0].destino if len(rotas) == 1 else None
+
+    if destino and perfil.avancar_fase(destino, usuario=request.user, observacao=observacao):
         messages.success(request, f'Perfil avançado para "{perfil.fase_atual.nome}".')
     else:
-        messages.info(request, 'Este perfil já está na última fase (Concluído / Ativo).')
+        messages.info(request, 'Escolha uma rota válida para avançar este perfil.')
 
     return redirect('profiles:profile_detail', pk=perfil.pk)
 

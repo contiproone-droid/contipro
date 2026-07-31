@@ -9,7 +9,7 @@
         <div class="text-muted">{{ perfil.email }}</div>
     </div>
     <div class="d-flex gap-2">
-        <button type="button" class="btn btn-brand" data-bs-toggle="modal" data-bs-target="#advanceModal{{ perfil.pk }}" {% if not perfil.proxima_fase %}disabled{% endif %}>
+        <button type="button" class="btn btn-brand" data-bs-toggle="modal" data-bs-target="#advanceModal{{ perfil.pk }}" {% if perfil.is_concluido %}disabled{% endif %}>
             <i class="ph-bold ph-arrow-circle-right"></i> Avançar fase
         </button>
         <a href="{% url 'profiles:profile_update' perfil.pk %}" class="btn btn-outline-ink">
@@ -52,7 +52,7 @@
     <div class="card-body">
         <h6 class="card-title mb-3"><span class="section-icon"><i class="ph-bold ph-flow-arrow"></i></span> Progresso do pipeline</h6>
         {% include 'profiles/_pipeline_track.html' with perfil=perfil size='full' %}
-        {% if not perfil.proxima_fase %}
+        {% if perfil.is_concluido %}
         <div class="alert alert-success mt-3 mb-0"><i class="ph-bold ph-check-circle"></i> Perfil concluído — todas as fases finalizadas.</div>
         {% endif %}
     </div>
