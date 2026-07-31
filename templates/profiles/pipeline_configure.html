@@ -24,7 +24,7 @@
                     </button>
                     <button type="submit" class="btn btn-sm btn-brand pipeline-config-list__save d-none">Salvar</button>
                 </form>
-                <span class="pipeline-config-list__count text-muted small">{{ stage.total_perfis }} perfil{{ stage.total_perfis|pluralize }}</span>
+                <span class="pipeline-config-list__count text-muted small">{{ stage.total_perfis }} perfi{{ stage.total_perfis|pluralize:'l,s' }}</span>
                 <button type="button" class="btn btn-sm btn-outline-ink pipeline-config-list__delete"
                     data-bs-toggle="modal" data-bs-target="#deleteStageModal{{ stage.pk }}"
                     {% if stages|length <= 1 %}disabled{% endif %}
@@ -65,7 +65,7 @@
                     <p>Apagar <strong>{{ stage.nome }}</strong>?</p>
                     {% if stage.total_perfis %}
                     <p class="text-muted small mb-0">
-                        {{ stage.total_perfis }} perfil{{ stage.total_perfis|pluralize }} nesta fase
+                        {{ stage.total_perfis }} perfi{{ stage.total_perfis|pluralize:'l,s' }} nesta fase
                         {{ stage.total_perfis|pluralize:'será,serão' }} movido{{ stage.total_perfis|pluralize }}
                         para a fase vizinha automaticamente, com registro no histórico.
                     </p>
