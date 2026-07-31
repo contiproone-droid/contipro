@@ -309,6 +309,7 @@ class PipelineCanvasTemplateTests(TestCase):
         resp = client.get(reverse('profiles:pipeline_configure'))
         self.assertContains(resp, 'drawflow')
         self.assertContains(resp, reverse('profiles:pipeline_graph_data'))
+        self.assertContains(resp, 'integrity=')
 
 
 class PipelineMapTests(TestCase):

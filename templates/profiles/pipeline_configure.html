@@ -1,122 +1,128 @@
 {% extends 'base.html' %}
-{% load profile_extras %}
 {% block title %}Configurar pipeline{% endblock %}
+{% block extra_head %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/drawflow@0.0.60/dist/drawflow.min.css" integrity="sha384-IFh+Q6zh+LRcTjqVmAKetdGY59dT485vtvWT5DAKQy8iv5+fYWHXisHP7mFKcFqV" crossorigin="anonymous">
+<style>
+    #pipelineCanvas { width: 100%; height: calc(100vh - 220px); background: var(--bg-page); border: 1px solid var(--border-subtle); border-radius: .75rem; }
+    .pipeline-node { background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: .6rem; padding: .6rem .8rem; min-width: 10rem; box-shadow: var(--shadow-card); }
+    .pipeline-node__name { background: transparent; border: none; font-family: var(--font-body); font-weight: 500; color: var(--text-body); width: 100%; }
+    .pipeline-node__name:focus { outline: none; border-bottom: 1px solid var(--accent-on-surface); }
+    .pipeline-node__delete { background: none; border: none; color: var(--text-muted); padding: 0; margin-left: .4rem; }
+    .pipeline-node__delete:hover { color: var(--status-danger); }
+    .drawflow .drawflow-node { padding: 0; }
+    .drawflow .connection .main-path { stroke: var(--text-muted); stroke-width: 2px; }
+    .drawflow .connection .main-path:hover { stroke: var(--signal-amber); }
+</style>
+{% endblock %}
 {% block content %}
 <div class="page-header">
     <div>
         <p class="page-header__eyebrow">Pipeline</p>
         <h1 class="page-header__title">Configurar pipeline</h1>
     </div>
+    <button type="button" class="btn btn-brand" id="addStageBtn"><i class="ph-bold ph-plus"></i> Nova fase</button>
 </div>
-
-<div class="card mb-3">
-    <div class="card-body">
-        <h6 class="card-title mb-3"><span class="section-icon"><i class="ph-bold ph-flow-arrow"></i></span> Fases (arraste para reordenar)</h6>
-        <ul class="pipeline-config-list" id="pipelineStageList">
-            {% for stage in stages %}
-            <li class="pipeline-config-list__item" data-pk="{{ stage.pk }}">
-                <span class="pipeline-config-list__handle" aria-hidden="true"><i class="ph-bold ph-dots-six-vertical"></i></span>
-                <form class="pipeline-config-list__rename-form" method="post" action="{% url 'profiles:pipeline_stage_rename' stage.pk %}">
-                    {% csrf_token %}
-                    <input type="text" name="nome" value="{{ stage.nome }}" class="form-control form-control-sm pipeline-config-list__input" readonly>
-                    <button type="button" class="btn btn-sm btn-outline-ink pipeline-config-list__edit" aria-label="Renomear {{ stage.nome }}">
-                        <i class="ph-bold ph-pencil-simple"></i>
-                    </button>
-                    <button type="submit" class="btn btn-sm btn-brand pipeline-config-list__save d-none">Salvar</button>
-                </form>
-                <span class="pipeline-config-list__count text-muted small">{{ stage.total_perfis }} perfi{{ stage.total_perfis|pluralize:'l,s' }}</span>
-                <button type="button" class="btn btn-sm btn-outline-ink pipeline-config-list__delete"
-                    data-bs-toggle="modal" data-bs-target="#deleteStageModal{{ stage.pk }}"
-                    {% if stages|length <= 1 %}disabled{% endif %}
-                    aria-label="Apagar {{ stage.nome }}">
-                    <i class="ph-bold ph-trash"></i>
-                </button>
-            </li>
-            {% endfor %}
-        </ul>
-    </div>
-</div>
-
-<div class="card">
-    <div class="card-body">
-        <h6 class="card-title mb-3"><span class="section-icon"><i class="ph-bold ph-plus-circle"></i></span> Adicionar fase</h6>
-        <form method="post" action="{% url 'profiles:pipeline_stage_create' %}" class="d-flex gap-2">
-            {% csrf_token %}
-            <input type="text" name="nome" class="form-control" placeholder="Nome da nova fase" required>
-            <button type="submit" class="btn btn-brand text-nowrap"><i class="ph-bold ph-plus"></i> Adicionar</button>
-        </form>
-    </div>
-</div>
-
-{% for stage in stages %}
-<div class="modal fade" id="deleteStageModal{{ stage.pk }}" tabindex="-1" aria-labelledby="deleteStageModalLabel{{ stage.pk }}" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <form method="post" action="{% url 'profiles:pipeline_stage_delete' stage.pk %}">
-                {% csrf_token %}
-                <div class="modal-header">
-                    <h5 class="modal-title" id="deleteStageModalLabel{{ stage.pk }}">
-                        <span class="modal-icon-badge"><i class="ph-bold ph-trash"></i></span>
-                        Apagar fase
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
-                </div>
-                <div class="modal-body">
-                    <p>Apagar <strong>{{ stage.nome }}</strong>?</p>
-                    {% if stage.total_perfis %}
-                    <p class="text-muted small mb-0">
-                        {{ stage.total_perfis }} perfi{{ stage.total_perfis|pluralize:'l,s' }} nesta fase
-                        {{ stage.total_perfis|pluralize:'será,serão' }} movido{{ stage.total_perfis|pluralize }}
-                        para a fase vizinha automaticamente, com registro no histórico.
-                    </p>
-                    {% endif %}
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-link text-decoration-none" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-brand"><i class="ph-bold ph-trash"></i> Apagar</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-{% endfor %}
+<p class="text-muted small">Arraste uma fase pra mover. Puxe uma linha da borda de uma fase até outra pra criar uma rota. Clique duplo no nome pra renomear.</p>
+<div id="pipelineCanvas" data-graph-url="{% url 'profiles:pipeline_graph_data' %}"></div>
 {% endblock %}
-
 {% block extra_js %}
-<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js" integrity="sha384-BSxuMLxX+FCbTdYec3TbXlnMGEEM2QXTFdtDaveen71o+jswm2J36+xFqp8k4VHM" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/drawflow@0.0.60/dist/drawflow.min.js" integrity="sha384-JsnM4f1X8b5e9VbQCj6Bt6840HQNDYVKohzbXJnqOetMno8i6cmKNLVkyK3snqSw" crossorigin="anonymous"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    var list = document.getElementById('pipelineStageList');
-    if (!list) return;
+    var container = document.getElementById('pipelineCanvas');
+    var editor = new Drawflow(container);
+    editor.reroute = true;
+    editor.start();
 
     function csrfToken() {
-        return list.querySelector('[name=csrfmiddlewaretoken]').value;
+        var match = document.cookie.match(/csrftoken=([^;]+)/);
+        return match ? match[1] : '';
     }
 
-    Sortable.create(list, {
-        handle: '.pipeline-config-list__handle',
-        animation: 150,
-        onEnd: function () {
-            var pks = Array.prototype.map.call(list.children, function (li) { return li.dataset.pk; });
-            var body = new URLSearchParams();
-            pks.forEach(function (pk) { body.append('pk', pk); });
-            fetch("{% url 'profiles:pipeline_stage_reorder' %}", {
-                method: 'POST',
-                headers: { 'X-CSRFToken': csrfToken() },
-                body: body,
+    function post(url, params) {
+        var body = new URLSearchParams(params);
+        return fetch(url, { method: 'POST', headers: { 'X-CSRFToken': csrfToken() }, body: body })
+            .then(function (r) { return r.json().then(function (data) { return { status: r.status, data: data }; }); });
+    }
+
+    function nodeHtml(nome) {
+        return '<div class="pipeline-node">' +
+            '<input class="pipeline-node__name" value="' + nome.replace(/"/g, '&quot;') + '" readonly>' +
+            '<button type="button" class="pipeline-node__delete" title="Apagar"><i class="ph-bold ph-trash"></i></button>' +
+            '</div>';
+    }
+
+    var stageIdByNodeId = {};
+
+    function wireNode(nodeId, stageId) {
+        var el = document.getElementById('node-' + nodeId);
+        var input = el.querySelector('.pipeline-node__name');
+        var delBtn = el.querySelector('.pipeline-node__delete');
+
+        input.addEventListener('dblclick', function () { input.readOnly = false; input.focus(); });
+        input.addEventListener('blur', function () {
+            input.readOnly = true;
+            post("{% url 'profiles:pipeline_stage_rename' 0 %}".replace('0', stageId), { nome: input.value });
+        });
+
+        delBtn.addEventListener('click', function () {
+            post("{% url 'profiles:pipeline_stage_delete' 0 %}".replace('0', stageId), {}).then(function (res) {
+                if (res.data.ok) { editor.removeNodeId('node-' + nodeId); return; }
+                if (res.data.reason === 'precisa_destino') {
+                    var destinoId = prompt('Esta fase tem perfis. Informe o ID da fase de destino (veja os IDs no admin) para mover os perfis antes de apagar:');
+                    if (destinoId) {
+                        post("{% url 'profiles:pipeline_stage_delete' 0 %}".replace('0', stageId), { destino: destinoId }).then(function (res2) {
+                            if (res2.data.ok) editor.removeNodeId('node-' + nodeId);
+                            else alert(res2.data.message || 'Não foi possível apagar.');
+                        });
+                    }
+                } else {
+                    alert(res.data.message || 'Não foi possível apagar.');
+                }
             });
-        }
+        });
+    }
+
+    fetch(container.dataset.graphUrl).then(function (r) { return r.json(); }).then(function (graph) {
+        graph.stages.forEach(function (stage) {
+            var nodeId = editor.addNode(
+                'stage', 1, 1, stage.x, stage.y, 'stage-' + stage.id, {}, nodeHtml(stage.nome),
+            );
+            stageIdByNodeId[nodeId] = stage.id;
+            wireNode(nodeId, stage.id);
+        });
+
+        graph.routes.forEach(function (route) {
+            var origemNodeId = Object.keys(stageIdByNodeId).find(function (k) { return stageIdByNodeId[k] === route.origem; });
+            var destinoNodeId = Object.keys(stageIdByNodeId).find(function (k) { return stageIdByNodeId[k] === route.destino; });
+            if (origemNodeId && destinoNodeId) {
+                editor.addConnection(origemNodeId, destinoNodeId, 'output_1', 'input_1');
+            }
+        });
     });
 
-    list.querySelectorAll('.pipeline-config-list__edit').forEach(function (btn) {
-        btn.addEventListener('click', function () {
-            var form = btn.closest('form');
-            var input = form.querySelector('.pipeline-config-list__input');
-            var save = form.querySelector('.pipeline-config-list__save');
-            input.readOnly = false;
-            input.focus();
-            btn.classList.add('d-none');
-            save.classList.remove('d-none');
+    editor.on('nodeMoved', function (nodeId) {
+        var pos = editor.drawflow.drawflow.Home.data[nodeId].pos;
+        post("{% url 'profiles:pipeline_stage_move' 0 %}".replace('0', stageIdByNodeId[nodeId]), { x: Math.round(pos[0]), y: Math.round(pos[1]) });
+    });
+
+    editor.on('connectionCreated', function (info) {
+        var rotulo = prompt('Rótulo desta rota (ex: Padrão, Falhou):', 'Padrão');
+        if (rotulo === null) { editor.removeSingleConnection(info.output_id, info.input_id, info.output_class, info.input_class); return; }
+        post("{% url 'profiles:pipeline_route_create' %}", {
+            origem: stageIdByNodeId[info.output_id], destino: stageIdByNodeId[info.input_id], rotulo: rotulo,
+        });
+    });
+
+    document.getElementById('addStageBtn').addEventListener('click', function () {
+        var nome = prompt('Nome da nova fase:');
+        if (!nome) return;
+        post("{% url 'profiles:pipeline_stage_create' %}", { nome: nome, x: 100, y: 100 }).then(function (res) {
+            if (res.data.ok) {
+                var nodeId = editor.addNode('stage', 1, 1, 100, 100, 'stage-' + res.data.stage.id, {}, nodeHtml(res.data.stage.nome));
+                stageIdByNodeId[nodeId] = res.data.stage.id;
+                wireNode(nodeId, res.data.stage.id);
+            }
         });
     });
 });
