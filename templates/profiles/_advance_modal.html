@@ -10,7 +10,7 @@ Requer um botão gatilho em algum lugar da página com:
                 {% csrf_token %}
                 <div class="modal-header">
                     <h5 class="modal-title" id="advanceModalLabel{{ perfil.pk }}">
-                        <span class="modal-icon-badge"><i class="bi bi-arrow-right-circle"></i></span>
+                        <span class="modal-icon-badge"><i class="ph-bold ph-arrow-circle-right"></i></span>
                         Avançar fase
                     </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
@@ -20,7 +20,7 @@ Requer um botão gatilho em algum lugar da página com:
                     {% if perfil.proxima_fase %}
                         <div class="phase-transition">
                             <span class="phase-transition__chip">{{ perfil.get_fase_atual_display }}</span>
-                            <i class="bi bi-arrow-right phase-transition__arrow"></i>
+                            <i class="ph-bold ph-arrow-right phase-transition__arrow"></i>
                             <span class="phase-transition__chip phase-transition__chip--next">{{ perfil.proxima_fase.label }}</span>
                         </div>
                         <label class="form-label small" for="obs-{{ perfil.pk }}">Observação (opcional)</label>
@@ -34,7 +34,7 @@ Requer um botão gatilho em algum lugar da página com:
                     <button type="button" class="btn btn-link text-decoration-none" data-bs-dismiss="modal">Cancelar</button>
                     {% if perfil.proxima_fase %}
                         <button type="submit" class="btn btn-brand">
-                            <i class="bi bi-arrow-right-circle"></i> Avançar
+                            <i class="ph-bold ph-arrow-circle-right"></i> Avançar
                         </button>
                     {% endif %}
                 </div>

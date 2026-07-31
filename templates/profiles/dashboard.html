@@ -40,7 +40,7 @@
     <div class="col-lg-8">
         <div class="card h-100">
             <div class="card-body">
-                <h6 class="card-title">Funil de fases</h6>
+                <h6 class="card-title"><span class="section-icon"><i class="ph-bold ph-chart-bar"></i></span> Funil de fases</h6>
                 <div style="position: relative; height: 220px;">
                     <canvas id="funilChart"></canvas>
                 </div>
@@ -50,7 +50,7 @@
     <div class="col-lg-4">
         <div class="card h-100">
             <div class="card-body">
-                <h6 class="card-title">Perfis por status</h6>
+                <h6 class="card-title"><span class="section-icon"><i class="ph-bold ph-chart-donut"></i></span> Perfis por status</h6>
                 <div class="donut-wrap">
                     <canvas id="statusChart"></canvas>
                 </div>
@@ -61,7 +61,7 @@
 
 <div class="card">
     <div class="card-body">
-        <h6 class="card-title">Perfis mais recentes</h6>
+        <h6 class="card-title"><span class="section-icon"><i class="ph-bold ph-clock-counter-clockwise"></i></span> Perfis mais recentes</h6>
         <div class="table-responsive">
             <table class="table table-sm table-hover align-middle mb-0">
                 <thead>
@@ -83,7 +83,12 @@
                         <td class="text-muted small">{{ perfil.atualizado_em|date:'d/m/Y H:i' }}</td>
                     </tr>
                     {% empty %}
-                    <tr><td colspan="5" class="text-center text-muted py-4">Nenhum perfil cadastrado ainda.</td></tr>
+                    <tr><td colspan="5">
+                        <div class="empty-state">
+                            <span class="empty-state__icon"><i class="ph-bold ph-users"></i></span>
+                            <p class="empty-state__text">Nenhum perfil cadastrado ainda.</p>
+                        </div>
+                    </td></tr>
                     {% endfor %}
                 </tbody>
             </table>

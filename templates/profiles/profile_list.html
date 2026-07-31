@@ -8,7 +8,7 @@
         <h1 class="page-header__title">Todos os perfis</h1>
     </div>
     <a href="{% url 'profiles:profile_create' %}" class="btn btn-brand">
-        <i class="bi bi-plus-lg"></i> Novo Perfil
+        <i class="ph-bold ph-plus"></i> Novo Perfil
     </a>
 </div>
 
@@ -28,7 +28,7 @@
                 {{ filtro.status }}
             </div>
             <div class="col-md-1 d-grid">
-                <button type="submit" class="btn btn-outline-ink"><i class="bi bi-search"></i></button>
+                <button type="submit" class="btn btn-outline-ink"><i class="ph-bold ph-magnifying-glass"></i></button>
             </div>
         </form>
     </div>
@@ -65,19 +65,24 @@
                     <td class="text-muted small">{{ perfil.atualizado_em|date:'d/m/Y H:i' }}</td>
                     <td class="text-end">
                         <button type="button" class="btn btn-sm btn-brand" data-bs-toggle="modal" data-bs-target="#advanceModal{{ perfil.pk }}" {% if not perfil.proxima_fase %}disabled{% endif %}>
-                            <i class="bi bi-arrow-right-circle"></i> Avançar
+                            <i class="ph-bold ph-arrow-circle-right"></i> Avançar
                         </button>
                         <a href="{% url 'profiles:profile_detail' perfil.pk %}" class="btn btn-sm btn-outline-ink">
-                            <i class="bi bi-eye"></i>
+                            <i class="ph-bold ph-eye"></i>
                         </a>
                         <a href="{% url 'profiles:profile_update' perfil.pk %}" class="btn btn-sm btn-outline-ink">
-                            <i class="bi bi-pencil"></i>
+                            <i class="ph-bold ph-pencil-simple"></i>
                         </a>
                     </td>
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="7" class="text-center text-muted py-4">Nenhum perfil encontrado.</td>
+                    <td colspan="7">
+                        <div class="empty-state">
+                            <span class="empty-state__icon"><i class="ph-bold ph-users"></i></span>
+                            <p class="empty-state__text">Nenhum perfil encontrado.</p>
+                        </div>
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>

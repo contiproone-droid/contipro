@@ -10,13 +10,13 @@
     </div>
     <div class="d-flex gap-2">
         <button type="button" class="btn btn-brand" data-bs-toggle="modal" data-bs-target="#advanceModal{{ perfil.pk }}" {% if not perfil.proxima_fase %}disabled{% endif %}>
-            <i class="bi bi-arrow-right-circle"></i> Avançar fase
+            <i class="ph-bold ph-arrow-circle-right"></i> Avançar fase
         </button>
         <a href="{% url 'profiles:profile_update' perfil.pk %}" class="btn btn-outline-ink">
-            <i class="bi bi-pencil"></i> Editar
+            <i class="ph-bold ph-pencil-simple"></i> Editar
         </a>
         <a href="{% url 'profiles:profile_list' %}" class="btn btn-outline-ink">
-            <i class="bi bi-list"></i> Voltar
+            <i class="ph-bold ph-list"></i> Voltar
         </a>
     </div>
 </div>
@@ -50,10 +50,10 @@
 
 <div class="card mb-3">
     <div class="card-body">
-        <h6 class="card-title mb-3">Progresso do pipeline</h6>
+        <h6 class="card-title mb-3"><span class="section-icon"><i class="ph-bold ph-flow-arrow"></i></span> Progresso do pipeline</h6>
         {% include 'profiles/_pipeline_track.html' with perfil=perfil size='full' %}
         {% if not perfil.proxima_fase %}
-        <div class="alert alert-success mt-3 mb-0"><i class="bi bi-check-circle"></i> Perfil concluído — todas as fases finalizadas.</div>
+        <div class="alert alert-success mt-3 mb-0"><i class="ph-bold ph-check-circle"></i> Perfil concluído — todas as fases finalizadas.</div>
         {% endif %}
     </div>
 </div>
@@ -62,7 +62,7 @@
     <div class="col-lg-6">
         <div class="card mb-3">
             <div class="card-body">
-                <h6 class="card-title"><i class="bi bi-file-earmark-text"></i> Página do Facebook</h6>
+                <h6 class="card-title"><span class="section-icon"><i class="ph-bold ph-file-text"></i></span> Página do Facebook</h6>
                 {% if paginas %}
                 <table class="table table-sm mb-0">
                     <thead><tr><th>Nome</th><th>Status</th><th>Criada em</th><th>Link</th></tr></thead>
@@ -78,14 +78,17 @@
                     </tbody>
                 </table>
                 {% else %}
-                <p class="text-muted mb-0">Nenhuma página cadastrada ainda.</p>
+                <div class="empty-state">
+                    <span class="empty-state__icon"><i class="ph-bold ph-file-text"></i></span>
+                    <p class="empty-state__text">Nenhuma página cadastrada ainda.</p>
+                </div>
                 {% endif %}
             </div>
         </div>
 
         <div class="card mb-3">
             <div class="card-body">
-                <h6 class="card-title"><i class="bi bi-whatsapp"></i> Vínculo do WhatsApp</h6>
+                <h6 class="card-title"><span class="section-icon"><i class="ph-bold ph-whatsapp-logo"></i></span> Vínculo do WhatsApp</h6>
                 {% if whatsapp_links %}
                 <table class="table table-sm mb-0">
                     <thead><tr><th>Número</th><th>Status</th><th>Data</th></tr></thead>
@@ -100,14 +103,17 @@
                     </tbody>
                 </table>
                 {% else %}
-                <p class="text-muted mb-0">Nenhum número vinculado ainda.</p>
+                <div class="empty-state">
+                    <span class="empty-state__icon"><i class="ph-bold ph-whatsapp-logo"></i></span>
+                    <p class="empty-state__text">Nenhum número vinculado ainda.</p>
+                </div>
                 {% endif %}
             </div>
         </div>
 
         <div class="card mb-3">
             <div class="card-body">
-                <h6 class="card-title"><i class="bi bi-building"></i> Business Manager</h6>
+                <h6 class="card-title"><span class="section-icon"><i class="ph-bold ph-buildings"></i></span> Business Manager</h6>
                 {% if business_manager %}
                 <table class="table table-sm mb-0">
                     <tr><th>Nome</th><td>{{ business_manager.nome_bm }}</td></tr>
@@ -116,7 +122,10 @@
                     <tr><th>Gerado em</th><td class="text-muted small">{{ business_manager.data_geracao|date:'d/m/Y'|default:'—' }}</td></tr>
                 </table>
                 {% else %}
-                <p class="text-muted mb-0">Business Manager ainda não gerado.</p>
+                <div class="empty-state">
+                    <span class="empty-state__icon"><i class="ph-bold ph-buildings"></i></span>
+                    <p class="empty-state__text">Business Manager ainda não gerado.</p>
+                </div>
                 {% endif %}
             </div>
         </div>
@@ -124,7 +133,7 @@
         {% if perfil.observacoes %}
         <div class="card mb-3">
             <div class="card-body">
-                <h6 class="card-title"><i class="bi bi-sticky"></i> Observações</h6>
+                <h6 class="card-title"><span class="section-icon"><i class="ph-bold ph-note"></i></span> Observações</h6>
                 <p class="mb-0" style="white-space: pre-line;">{{ perfil.observacoes }}</p>
             </div>
         </div>
@@ -134,7 +143,7 @@
     <div class="col-lg-6">
         <div class="card">
             <div class="card-body">
-                <h6 class="card-title mb-3"><i class="bi bi-clock-history"></i> Histórico de fases (auditoria)</h6>
+                <h6 class="card-title mb-3"><span class="section-icon"><i class="ph-bold ph-clock-counter-clockwise"></i></span> Histórico de fases (auditoria)</h6>
                 <ul class="v-timeline">
                     {% for item in historico %}
                     <li class="v-timeline__item">

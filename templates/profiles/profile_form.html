@@ -8,7 +8,7 @@
     </div>
     {% if perfil %}
     <a href="{% url 'profiles:profile_detail' perfil.pk %}" class="btn btn-outline-ink btn-sm">
-        <i class="bi bi-arrow-left"></i> Voltar ao perfil
+        <i class="ph-bold ph-arrow-left"></i> Voltar ao perfil
     </a>
     {% endif %}
 </div>
@@ -72,7 +72,7 @@
 
             {% if perfil %}
                 <div class="alert alert-secondary mt-4 small">
-                    <i class="bi bi-info-circle"></i>
+                    <i class="ph-bold ph-info"></i>
                     A fase atual (<strong>{{ perfil.get_fase_atual_display }}</strong>) é alterada pela ação
                     "Avançar fase" na página de detalhes, não por este formulário — isso garante que toda
                     mudança fique registrada no histórico de auditoria.
@@ -80,7 +80,7 @@
             {% endif %}
 
             <div class="mt-4">
-                <button type="submit" class="btn btn-brand"><i class="bi bi-check-lg"></i> Salvar</button>
+                <button type="submit" class="btn btn-brand"><i class="ph-bold ph-check"></i> Salvar</button>
                 <a href="{% url 'profiles:profile_list' %}" class="btn btn-link text-decoration-none">Cancelar</a>
             </div>
         </form>
