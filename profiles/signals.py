@@ -11,6 +11,7 @@ def registrar_fase_inicial(sender, instance, created, **kwargs):
         PhaseHistory.objects.create(
             perfil=instance,
             fase_nome=instance.fase_atual.nome,
+            fase_stage=instance.fase_atual,
             usuario=instance.responsavel,
             observacao='Perfil criado.',
         )

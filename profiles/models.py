@@ -15,6 +15,8 @@ class PipelineStage(models.Model):
 
     nome = models.CharField('Nome da fase', max_length=150)
     ordem = models.PositiveIntegerField('Ordem', unique=True)
+    posicao_x = models.IntegerField('Posição X no canvas', default=0)
+    posicao_y = models.IntegerField('Posição Y no canvas', default=0)
 
     class Meta:
         ordering = ['ordem']
@@ -24,37 +26,55 @@ class PipelineStage(models.Model):
     def __str__(self):
         return self.nome
 
-    def excluir_e_realocar(self, usuario=None):
-        """Apaga a fase, movendo perfis afetados para a fase vizinha e registrando
-        auditoria. Levanta ValueError se for a última fase restante do pipeline."""
-        todas = list(PipelineStage.objects.order_by('ordem'))
-        if len(todas) <= 1:
+    def excluir_e_realocar(self, destino=None, usuario=None):
+        """Apaga a fase. Se houver perfis nela, `destino` é obrigatório e recebe os
+        perfis afetados (com auditoria). Levanta ValueError se for a última fase
+        restante do pipeline, ou se houver perfis mas nenhum destino foi informado."""
+        if PipelineStage.objects.count() <= 1:
             raise ValueError('Não é possível apagar a última fase restante do pipeline.')
 
-        idx = todas.index(self)
-        destino = todas[1] if idx == 0 else todas[idx - 1]
+        afetados = list(Profile.objects.filter(fase_atual=self))
+        if afetados and destino is None:
+            raise ValueError('Escolha uma fase de destino para os perfis desta fase.')
 
         with transaction.atomic():
-            for perfil in Profile.objects.filter(fase_atual=self):
+            for perfil in afetados:
                 perfil.fase_atual = destino
                 perfil.save(update_fields=['fase_atual', 'atualizado_em'])
                 PhaseHistory.objects.create(
                     perfil=perfil,
                     fase_nome=destino.nome,
+                    fase_stage=destino,
                     usuario=usuario,
                     observacao='Movido automaticamente: a fase anterior foi removida do pipeline.',
                 )
             self.delete()
 
-    @staticmethod
-    def reordenar(pks_em_ordem):
-        """Recebe uma lista de PKs de PipelineStage na nova ordem desejada e persiste.
-        Usa um deslocamento temporário para não violar a constraint unique de 'ordem'."""
-        with transaction.atomic():
-            for indice, pk in enumerate(pks_em_ordem):
-                PipelineStage.objects.filter(pk=pk).update(ordem=10_000 + indice)
-            for indice, pk in enumerate(pks_em_ordem):
-                PipelineStage.objects.filter(pk=pk).update(ordem=indice + 1)
+
+class PipelineRoute(models.Model):
+    """Uma rota possível entre duas fases do pipeline (aresta do grafo)."""
+
+    origem = models.ForeignKey(
+        PipelineStage,
+        verbose_name='Fase de origem',
+        on_delete=models.CASCADE,
+        related_name='rotas_saida',
+    )
+    destino = models.ForeignKey(
+        PipelineStage,
+        verbose_name='Fase de destino',
+        on_delete=models.CASCADE,
+        related_name='rotas_entrada',
+    )
+    rotulo = models.CharField('Rótulo', max_length=100)
+
+    class Meta:
+        unique_together = ('origem', 'destino')
+        verbose_name = 'Rota do pipeline'
+        verbose_name_plural = 'Rotas do pipeline'
+
+    def __str__(self):
+        return f'{self.origem.nome} → {self.destino.nome} ({self.rotulo})'
 
 
 class AuthType(models.TextChoices):
@@ -154,51 +174,25 @@ class Profile(models.Model):
         return reverse('profiles:profile_detail', args=[self.pk])
 
     @property
-    def fase_index(self):
-        ordem = list(PipelineStage.objects.order_by('ordem'))
-        try:
-            return ordem.index(self.fase_atual)
-        except ValueError:
-            return 0
-
-    @property
-    def fases_concluidas(self):
-        ordem = list(PipelineStage.objects.order_by('ordem'))
-        return ordem[:self.fase_index]
-
-    @property
-    def fase_progress_percent(self):
-        ordem = list(PipelineStage.objects.order_by('ordem'))
-        total = len(ordem) - 1
-        if total <= 0:
-            return 100
-        return round(self.fase_index / total * 100)
-
-    @property
-    def proxima_fase(self):
-        ordem = list(PipelineStage.objects.order_by('ordem'))
-        try:
-            idx = ordem.index(self.fase_atual)
-        except ValueError:
-            return None
-        if idx >= len(ordem) - 1:
-            return None
-        return ordem[idx + 1]
+    def rotas_disponiveis(self):
+        return self.fase_atual.rotas_saida.select_related('destino')
 
     @property
     def is_concluido(self):
-        return self.proxima_fase is None
+        return not self.fase_atual.rotas_saida.exists()
 
-    def avancar_fase(self, usuario=None, observacao=''):
-        """Avança o perfil para a próxima fase e registra no histórico. Retorna True se avançou."""
-        proxima = self.proxima_fase
-        if proxima is None:
+    def avancar_fase(self, destino, usuario=None, observacao=''):
+        """Avança o perfil para `destino`, se for uma rota válida a partir da fase
+        atual. Retorna True se avançou, False se `destino` não é uma rota configurada."""
+        valido = self.fase_atual.rotas_saida.filter(destino=destino).exists()
+        if not valido:
             return False
-        self.fase_atual = proxima
+        self.fase_atual = destino
         self.save(update_fields=['fase_atual', 'atualizado_em'])
         PhaseHistory.objects.create(
             perfil=self,
-            fase_nome=proxima.nome,
+            fase_nome=destino.nome,
+            fase_stage=destino,
             usuario=usuario,
             observacao=observacao,
         )
@@ -215,6 +209,14 @@ class PhaseHistory(models.Model):
         related_name='historico_fases',
     )
     fase_nome = models.CharField('Fase', max_length=150)
+    fase_stage = models.ForeignKey(
+        'PipelineStage',
+        verbose_name='Fase (referência)',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='+',
+    )
     data_hora = models.DateTimeField('Data/hora da mudança', default=timezone.now)
     usuario = models.ForeignKey(
         settings.AUTH_USER_MODEL,
