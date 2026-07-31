@@ -101,3 +101,12 @@ class ProfileFilterForm(forms.Form):
         choices=[('', 'Todos os status')] + list(ProfileStatus.choices),
         widget=forms.Select(attrs={'class': 'form-select'}),
     )
+
+
+class PipelineStageForm(forms.ModelForm):
+    class Meta:
+        model = PipelineStage
+        fields = ['nome']
+        widgets = {
+            'nome': forms.TextInput(attrs={'class': 'form-control form-control-sm'}),
+        }

@@ -527,6 +527,23 @@
         }
         .phase-transition__arrow { color: var(--text-muted); }
 
+        /* Pipeline configuration screen — draggable stage list */
+        .pipeline-config-list { list-style: none; margin: 0; padding: 0; }
+        .pipeline-config-list__item {
+            display: flex;
+            align-items: center;
+            gap: .75rem;
+            padding: .6rem .25rem;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+        .pipeline-config-list__item:last-child { border-bottom: none; }
+        .pipeline-config-list__handle { cursor: grab; color: var(--text-muted); flex-shrink: 0; }
+        .pipeline-config-list__item.sortable-ghost { opacity: .4; }
+        .pipeline-config-list__rename-form { display: flex; align-items: center; gap: .4rem; flex: 1; min-width: 0; }
+        .pipeline-config-list__input { border: 1px solid transparent; background: transparent; flex: 1; min-width: 0; }
+        .pipeline-config-list__input:not([readonly]) { border-color: var(--border-subtle); background: var(--bg-surface); }
+        .pipeline-config-list__count { flex-shrink: 0; white-space: nowrap; }
+
         /* Auth screen — echoes the pipeline-track dot+line language as faint ambient backdrop */
         .auth-page {
             position: relative;
@@ -566,6 +583,9 @@
             <a class="sidebar__link{% if request.path == profile_create_url %} is-active{% endif %}" href="{{ profile_create_url }}">
                 <i class="ph-bold ph-plus-circle"></i> Novo perfil
             </a>
+            <a class="sidebar__link{% if '/pipeline/' in request.path %} is-active{% endif %}" href="{% url 'profiles:pipeline_configure' %}">
+                <i class="ph-bold ph-flow-arrow"></i> Configurar pipeline
+            </a>
         </nav>
         <div class="sidebar__footer">
             <button type="button" class="theme-toggle" data-theme-toggle aria-label="Alternar tema claro/escuro">
@@ -598,6 +618,7 @@
                     <a class="sidebar__link{% if request.path == '/' %} is-active{% endif %}" href="{% url 'profiles:dashboard' %}"><i class="ph-bold ph-gauge"></i> Dashboard</a>
                     <a class="sidebar__link{% if '/perfis/' in request.path and request.path != profile_create_url %} is-active{% endif %}" href="{% url 'profiles:profile_list' %}"><i class="ph-bold ph-users"></i> Perfis</a>
                     <a class="sidebar__link{% if request.path == profile_create_url %} is-active{% endif %}" href="{{ profile_create_url }}"><i class="ph-bold ph-plus-circle"></i> Novo perfil</a>
+                    <a class="sidebar__link{% if '/pipeline/' in request.path %} is-active{% endif %}" href="{% url 'profiles:pipeline_configure' %}"><i class="ph-bold ph-flow-arrow"></i> Configurar pipeline</a>
                 </nav>
                 <div class="sidebar__footer border-0 px-0">
                     <button type="button" class="theme-toggle" data-theme-toggle aria-label="Alternar tema claro/escuro">

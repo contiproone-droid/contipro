@@ -111,3 +111,68 @@ class TemplateRenderingPipelineStageTests(TestCase):
         perfil = Profile.objects.create(nome='Teste', email='t@example.com', senha='x')
         resp = self.client.get(reverse('profiles:profile_detail', args=[perfil.pk]))
         self.assertContains(resp, 'Perfil criado.')
+
+
+class PipelineConfigureViewTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username='qa3', password='senha-forte-123')
+        self.client = Client()
+        self.client.login(username='qa3', password='senha-forte-123')
+
+    def test_pipeline_configure_lista_fases_na_ordem(self):
+        resp = self.client.get(reverse('profiles:pipeline_configure'))
+        self.assertEqual(resp.status_code, 200)
+        stages = list(resp.context['stages'])
+        self.assertEqual([s.ordem for s in stages], list(range(1, 8)))
+
+    def test_criar_fase_adiciona_na_ultima_posicao(self):
+        self.client.post(reverse('profiles:pipeline_stage_create'), {'nome': 'Nova fase'})
+        nova = PipelineStage.objects.get(nome='Nova fase')
+        self.assertEqual(nova.ordem, 8)
+
+    def test_renomear_fase_via_post(self):
+        stage = PipelineStage.objects.order_by('ordem').first()
+        self.client.post(reverse('profiles:pipeline_stage_rename', args=[stage.pk]), {'nome': 'Renomeada'})
+        stage.refresh_from_db()
+        self.assertEqual(stage.nome, 'Renomeada')
+
+    def test_apagar_fase_do_meio_move_perfis_e_redireciona(self):
+        segunda = PipelineStage.objects.order_by('ordem')[1]
+        perfil = Profile.objects.create(nome='Alvo', email='a@example.com', senha='x', fase_atual=segunda)
+
+        resp = self.client.post(reverse('profiles:pipeline_stage_delete', args=[segunda.pk]), follow=True)
+
+        self.assertEqual(resp.status_code, 200)
+        self.assertFalse(PipelineStage.objects.filter(pk=segunda.pk).exists())
+        perfil.refresh_from_db()
+        self.assertEqual(perfil.fase_atual.ordem, 1)
+
+    def test_apagar_ultima_fase_restante_mostra_erro(self):
+        PipelineStage.objects.exclude(pk=PipelineStage.objects.order_by('ordem').first().pk).delete()
+        ultima = PipelineStage.objects.get()
+
+        resp = self.client.post(reverse('profiles:pipeline_stage_delete', args=[ultima.pk]), follow=True)
+
+        self.assertTrue(PipelineStage.objects.filter(pk=ultima.pk).exists())
+        messages_list = list(resp.context['messages'])
+        self.assertTrue(any('última fase' in str(m) for m in messages_list))
+
+    def test_reordenar_via_post_persiste_nova_ordem(self):
+        stages = list(PipelineStage.objects.order_by('ordem'))
+        nova_ordem_pks = [s.pk for s in reversed(stages)]
+
+        resp = self.client.post(reverse('profiles:pipeline_stage_reorder'), {'pk': nova_ordem_pks})
+
+        self.assertEqual(resp.status_code, 200)
+        primeira = PipelineStage.objects.order_by('ordem').first()
+        self.assertEqual(primeira.pk, nova_ordem_pks[0])
+
+
+class PipelineSidebarLinkTests(TestCase):
+    def test_sidebar_tem_link_configurar_pipeline(self):
+        user = User.objects.create_user(username='qa4', password='senha-forte-123')
+        client = Client()
+        client.login(username='qa4', password='senha-forte-123')
+        resp = client.get(reverse('profiles:dashboard'))
+        self.assertContains(resp, reverse('profiles:pipeline_configure'))
+        self.assertContains(resp, 'Configurar pipeline')

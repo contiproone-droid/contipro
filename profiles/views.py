@@ -1,13 +1,13 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
-from django.db.models import Q
+from django.db.models import Count, Max, Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
-from .forms import PhaseAdvanceForm, ProfileFilterForm, ProfileForm
+from .forms import PhaseAdvanceForm, PipelineStageForm, ProfileFilterForm, ProfileForm
 from .models import PipelineStage, Profile, ProfileStatus
 
 
@@ -155,3 +155,58 @@ def api_dashboard_data(request):
     ]
 
     return JsonResponse({'funil': funil, 'status': status_data})
+
+
+@login_required
+def pipeline_configure(request):
+    stages = PipelineStage.objects.order_by('ordem').annotate(total_perfis=Count('perfis'))
+    return render(request, 'profiles/pipeline_configure.html', {'stages': stages})
+
+
+@login_required
+@require_POST
+def pipeline_stage_create(request):
+    proxima_ordem = (PipelineStage.objects.aggregate(m=Max('ordem'))['m'] or 0) + 1
+    form = PipelineStageForm(request.POST)
+    if form.is_valid():
+        stage = form.save(commit=False)
+        stage.ordem = proxima_ordem
+        stage.save()
+        messages.success(request, f'Fase "{stage.nome}" adicionada.')
+    else:
+        messages.error(request, 'Informe um nome para a nova fase.')
+    return redirect('profiles:pipeline_configure')
+
+
+@login_required
+@require_POST
+def pipeline_stage_rename(request, pk):
+    stage = get_object_or_404(PipelineStage, pk=pk)
+    form = PipelineStageForm(request.POST, instance=stage)
+    if form.is_valid():
+        form.save()
+        messages.success(request, 'Fase renomeada.')
+    else:
+        messages.error(request, 'Informe um nome para a fase.')
+    return redirect('profiles:pipeline_configure')
+
+
+@login_required
+@require_POST
+def pipeline_stage_delete(request, pk):
+    stage = get_object_or_404(PipelineStage, pk=pk)
+    nome = stage.nome
+    try:
+        stage.excluir_e_realocar(usuario=request.user)
+        messages.success(request, f'Fase "{nome}" removida.')
+    except ValueError as exc:
+        messages.error(request, str(exc))
+    return redirect('profiles:pipeline_configure')
+
+
+@login_required
+@require_POST
+def pipeline_stage_reorder(request):
+    pks = [int(pk) for pk in request.POST.getlist('pk')]
+    PipelineStage.reordenar(pks)
+    return JsonResponse({'ok': True})
