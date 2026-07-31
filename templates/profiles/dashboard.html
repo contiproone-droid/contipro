@@ -77,7 +77,7 @@
                     {% for perfil in perfis_recentes %}
                     <tr>
                         <td><a href="{% url 'profiles:profile_detail' perfil.pk %}" class="text-decoration-none fw-semibold">{{ perfil.nome }}</a></td>
-                        <td class="text-muted small">{{ perfil.get_fase_atual_display }}</td>
+                        <td class="text-muted small">{{ perfil.fase_atual.nome }}</td>
                         <td><span class="status-pill status-pill--{{ perfil.status|badge_color }}">{{ perfil.get_status_display }}</span></td>
                         <td>{{ perfil.responsavel|default:'—' }}</td>
                         <td class="text-muted small">{{ perfil.atualizado_em|date:'d/m/Y H:i' }}</td>
@@ -179,7 +179,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (statusChart) statusChart.destroy();
 
         var funilLabels = chartData.funil.map(function (item) { return item.fase; });
-        var funilNumeros = funilLabels.map(function (label) { return label.split('.')[0]; });
+        var funilNumeros = chartData.funil.map(function (item) { return String(item.ordem); });
         var funilTotais = chartData.funil.map(function (item) { return item.total; });
 
         funilChart = new Chart(document.getElementById('funilChart'), {

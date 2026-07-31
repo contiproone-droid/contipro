@@ -19,9 +19,9 @@ Requer um botão gatilho em algum lugar da página com:
                     <p class="text-muted small mb-2">{{ perfil.nome }}</p>
                     {% if perfil.proxima_fase %}
                         <div class="phase-transition">
-                            <span class="phase-transition__chip">{{ perfil.get_fase_atual_display }}</span>
+                            <span class="phase-transition__chip">{{ perfil.fase_atual.nome }}</span>
                             <i class="ph-bold ph-arrow-right phase-transition__arrow"></i>
-                            <span class="phase-transition__chip phase-transition__chip--next">{{ perfil.proxima_fase.label }}</span>
+                            <span class="phase-transition__chip phase-transition__chip--next">{{ perfil.proxima_fase.nome }}</span>
                         </div>
                         <label class="form-label small" for="obs-{{ perfil.pk }}">Observação (opcional)</label>
                         <textarea class="form-control" id="obs-{{ perfil.pk }}" name="observacao" rows="3"

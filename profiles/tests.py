@@ -89,3 +89,25 @@ class ProfileViewsPipelineStageTests(TestCase):
         perfil = Profile.objects.create(nome='Teste', email='t@example.com', senha='x')
         resp = self.client.post(reverse('profiles:profile_advance_phase', args=[perfil.pk]), follow=True)
         self.assertContains(resp, 'Login/acesso ao perfil no Facebook')
+
+
+class TemplateRenderingPipelineStageTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username='qa2', password='senha-forte-123')
+        self.client = Client()
+        self.client.login(username='qa2', password='senha-forte-123')
+
+    def test_pipeline_track_renderiza_nome_da_fase(self):
+        perfil = Profile.objects.create(nome='Teste', email='t@example.com', senha='x')
+        resp = self.client.get(reverse('profiles:profile_detail', args=[perfil.pk]))
+        self.assertContains(resp, 'Perfil criado no AdsPower')
+
+    def test_advance_modal_usa_nome_da_proxima_fase(self):
+        perfil = Profile.objects.create(nome='Teste', email='t@example.com', senha='x')
+        resp = self.client.get(reverse('profiles:profile_detail', args=[perfil.pk]))
+        self.assertContains(resp, 'Login/acesso ao perfil no Facebook')
+
+    def test_historico_de_fases_mostra_fase_nome(self):
+        perfil = Profile.objects.create(nome='Teste', email='t@example.com', senha='x')
+        resp = self.client.get(reverse('profiles:profile_detail', args=[perfil.pk]))
+        self.assertContains(resp, 'Perfil criado.')

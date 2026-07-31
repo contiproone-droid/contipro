@@ -73,7 +73,7 @@
             {% if perfil %}
                 <div class="alert alert-secondary mt-4 small">
                     <i class="ph-bold ph-info"></i>
-                    A fase atual (<strong>{{ perfil.get_fase_atual_display }}</strong>) é alterada pela ação
+                    A fase atual (<strong>{{ perfil.fase_atual.nome }}</strong>) é alterada pela ação
                     "Avançar fase" na página de detalhes, não por este formulário — isso garante que toda
                     mudança fique registrada no histórico de auditoria.
                 </div>

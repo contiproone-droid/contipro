@@ -58,7 +58,7 @@
                     <td class="mono text-muted">{{ perfil.adspower_id|default:'—' }}</td>
                     <td>
                         {% include 'profiles/_pipeline_track.html' with perfil=perfil size='mini' %}
-                        <div class="text-muted small mt-1">{{ perfil.get_fase_atual_display }}</div>
+                        <div class="text-muted small mt-1">{{ perfil.fase_atual.nome }}</div>
                     </td>
                     <td><span class="status-pill status-pill--{{ perfil.status|badge_color }}">{{ perfil.get_status_display }}</span></td>
                     <td>{{ perfil.responsavel|default:'—' }}</td>

@@ -3,11 +3,11 @@
 Uso: {% include 'profiles/_pipeline_track.html' with perfil=perfil size='mini' %}
 size: 'full' (padrão, com rótulos) ou 'mini' (compacto, sem rótulos, para tabelas)
 {% endcomment %}
-<div class="pipeline-track pipeline-track--{{ size|default:'full' }}" role="img" aria-label="Fase atual: {{ perfil.get_fase_atual_display }} &middot; Status: {{ perfil.get_status_display }}">
+<div class="pipeline-track pipeline-track--{{ size|default:'full' }}" role="img" aria-label="Fase atual: {{ perfil.fase_atual.nome }} &middot; Status: {{ perfil.get_status_display }}">
     {% for fase_value in fases_ordenadas %}
-        <div class="pipeline-track__step{% if fase_value == perfil.fase_atual %}{% if perfil.is_concluido %} is-done{% else %} is-current{% if perfil.status != 'ativo' %} is-current--{{ perfil.status|badge_color }}{% endif %}{% endif %}{% elif fase_value in perfil.fases_concluidas %} is-done{% endif %}" title="{{ fase_value.label }}{% if fase_value == perfil.fase_atual and perfil.status != 'ativo' %} — {{ perfil.get_status_display }}{% endif %}">
+        <div class="pipeline-track__step{% if fase_value == perfil.fase_atual %}{% if perfil.is_concluido %} is-done{% else %} is-current{% if perfil.status != 'ativo' %} is-current--{{ perfil.status|badge_color }}{% endif %}{% endif %}{% elif fase_value in perfil.fases_concluidas %} is-done{% endif %}" title="{{ fase_value.nome }}{% if fase_value == perfil.fase_atual and perfil.status != 'ativo' %} — {{ perfil.get_status_display }}{% endif %}">
             <span class="pipeline-track__node"></span>
-            {% if size != 'mini' %}<span class="pipeline-track__label">{{ fase_value.label }}</span>{% endif %}
+            {% if size != 'mini' %}<span class="pipeline-track__label">{{ fase_value.nome }}</span>{% endif %}
         </div>
     {% endfor %}
 </div>

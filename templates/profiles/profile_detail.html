@@ -31,7 +31,7 @@
     <div class="col-md-3">
         <div class="card h-100"><div class="card-body">
             <div class="stat-card__eyebrow">Fase atual</div>
-            <div class="fw-semibold mt-1">{{ perfil.get_fase_atual_display }}</div>
+            <div class="fw-semibold mt-1">{{ perfil.fase_atual.nome }}</div>
         </div></div>
     </div>
     <div class="col-md-3">
@@ -148,7 +148,7 @@
                     {% for item in historico %}
                     <li class="v-timeline__item">
                         <div class="d-flex justify-content-between">
-                            <span class="fw-semibold">{{ item.get_fase_display }}</span>
+                            <span class="fw-semibold">{{ item.fase_nome }}</span>
                             <small class="text-muted mono">{{ item.data_hora|date:'d/m/Y H:i' }}</small>
                         </div>
                         <div class="small text-muted">
