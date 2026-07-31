@@ -19,9 +19,10 @@
             --surface-0: #ffffff;
             --signal-amber: #dd8b2e;
             --signal-amber-dark: #c67826;
+            --signal-amber-text: #9c5a1c;
             --moss-600: #3f7a57;
             --brick-600: #b0453a;
-            --clay-400: #9c8f7a;
+            --clay-400: #746650;
             --wire-200: #e4e0d6;
             --wire-700: #363c4a;
             --font-display: 'Space Grotesk', 'IBM Plex Sans', sans-serif;
@@ -37,8 +38,10 @@
         }
         h1, h2, h3, h4, h5, h6, .font-display { font-family: var(--font-display); letter-spacing: -.01em; }
         .accent { color: var(--signal-amber); }
+        /* .accent reads fine on the dark sidebar/topbar; on light surfaces (login card) use the darker, AA-safe amber */
+        .accent--ink { color: var(--signal-amber-text); }
         a { color: var(--ink-950); }
-        a:hover { color: var(--signal-amber); }
+        a:hover { color: var(--signal-amber-text); }
 
         /* ---------- App shell ---------- */
         .app-shell { display: flex; min-height: 100vh; }
@@ -154,9 +157,9 @@
         .btn-brand {
             background: var(--signal-amber);
             border-color: var(--signal-amber);
-            color: #fff;
+            color: var(--ink-950);
         }
-        .btn-brand:hover, .btn-brand:focus { background: var(--signal-amber-dark); border-color: var(--signal-amber-dark); color: #fff; }
+        .btn-brand:hover, .btn-brand:focus { background: var(--signal-amber-dark); border-color: var(--signal-amber-dark); color: var(--ink-950); }
         .btn-outline-ink { border-color: var(--wire-200); color: var(--ink-950); }
         .btn-outline-ink:hover { background: var(--ink-950); border-color: var(--ink-950); color: #fff; }
 
@@ -164,7 +167,7 @@
             border-color: var(--wire-200);
         }
         .form-control:focus, .form-select:focus {
-            border-color: var(--signal-amber);
+            border-color: var(--signal-amber-text);
             box-shadow: 0 0 0 .2rem rgba(221,139,46,.15);
         }
 
@@ -207,7 +210,7 @@
             flex-shrink: 0;
         }
         .status-pill--success { color: var(--moss-600); }
-        .status-pill--warning { color: var(--signal-amber); }
+        .status-pill--warning { color: var(--signal-amber-text); }
         .status-pill--danger { color: var(--brick-600); }
         .status-pill--neutral { color: var(--clay-400); }
 
@@ -252,6 +255,19 @@
             box-shadow: 0 0 0 4px rgba(221,139,46,.2);
             animation: pulse-amber 2.4s ease-in-out infinite;
         }
+        /* Status overrides current-step node: banido/pausado break the "healthy progress" amber pulse */
+        .pipeline-track--full .pipeline-track__step.is-current--danger .pipeline-track__node {
+            background: var(--brick-600);
+            border-color: var(--brick-600);
+            box-shadow: 0 0 0 4px rgba(176,69,58,.2);
+            animation: none;
+        }
+        .pipeline-track--full .pipeline-track__step.is-current--neutral .pipeline-track__node {
+            background: var(--clay-400);
+            border-color: var(--clay-400);
+            box-shadow: none;
+            animation: none;
+        }
         .pipeline-track__label {
             font-size: .72rem;
             color: var(--clay-400);
@@ -275,6 +291,8 @@
         .pipeline-track--mini .pipeline-track__node { width: .5rem; height: .5rem; border: none; background: var(--wire-200); margin-bottom: 0; }
         .pipeline-track--mini .pipeline-track__step.is-done .pipeline-track__node { background: var(--moss-600); }
         .pipeline-track--mini .pipeline-track__step.is-current .pipeline-track__node { background: var(--signal-amber); }
+        .pipeline-track--mini .pipeline-track__step.is-current--danger .pipeline-track__node { background: var(--brick-600); }
+        .pipeline-track--mini .pipeline-track__step.is-current--neutral .pipeline-track__node { background: var(--clay-400); }
         .pipeline-track--mini .pipeline-track__step:not(:last-child)::after { top: 50%; transform: translateY(-50%); }
         .pipeline-track--mini .pipeline-track__step.is-done:not(:last-child)::after { background: var(--moss-600); }
         .pipeline-track--mini .pipeline-track__label { display: none; }
@@ -307,23 +325,24 @@
         footer.app-footer { color: var(--clay-400); font-size: .8rem; padding: 1.5rem 2.25rem; }
 
         /* Focus visibility */
-        a:focus-visible, button:focus-visible, .btn:focus-visible { outline: 2px solid var(--signal-amber); outline-offset: 2px; }
+        a:focus-visible, button:focus-visible, .btn:focus-visible { outline: 2px solid var(--signal-amber-text); outline-offset: 2px; }
     </style>
     {% block extra_head %}{% endblock %}
 </head>
 <body>
 {% if user.is_authenticated %}
 <div class="app-shell">
+    {% url 'profiles:profile_create' as profile_create_url %}
     <aside class="sidebar">
         <div class="sidebar__brand"><i class="bi bi-diagram-3-fill"></i> Pipeline<span class="accent">CRM</span></div>
         <nav class="sidebar__nav">
             <a class="sidebar__link{% if request.path == '/' %} is-active{% endif %}" href="{% url 'profiles:dashboard' %}">
                 <i class="bi bi-speedometer2"></i> Dashboard
             </a>
-            <a class="sidebar__link{% if '/perfis/' in request.path %} is-active{% endif %}" href="{% url 'profiles:profile_list' %}">
+            <a class="sidebar__link{% if '/perfis/' in request.path and request.path != profile_create_url %} is-active{% endif %}" href="{% url 'profiles:profile_list' %}">
                 <i class="bi bi-people-fill"></i> Perfis
             </a>
-            <a class="sidebar__link" href="{% url 'profiles:profile_create' %}">
+            <a class="sidebar__link{% if request.path == profile_create_url %} is-active{% endif %}" href="{{ profile_create_url }}">
                 <i class="bi bi-plus-circle"></i> Novo perfil
             </a>
         </nav>
@@ -352,8 +371,8 @@
             <div class="offcanvas-body d-flex flex-column">
                 <nav class="sidebar__nav px-0 flex-grow-1">
                     <a class="sidebar__link{% if request.path == '/' %} is-active{% endif %}" href="{% url 'profiles:dashboard' %}"><i class="bi bi-speedometer2"></i> Dashboard</a>
-                    <a class="sidebar__link{% if '/perfis/' in request.path %} is-active{% endif %}" href="{% url 'profiles:profile_list' %}"><i class="bi bi-people-fill"></i> Perfis</a>
-                    <a class="sidebar__link" href="{% url 'profiles:profile_create' %}"><i class="bi bi-plus-circle"></i> Novo perfil</a>
+                    <a class="sidebar__link{% if '/perfis/' in request.path and request.path != profile_create_url %} is-active{% endif %}" href="{% url 'profiles:profile_list' %}"><i class="bi bi-people-fill"></i> Perfis</a>
+                    <a class="sidebar__link{% if request.path == profile_create_url %} is-active{% endif %}" href="{{ profile_create_url }}"><i class="bi bi-plus-circle"></i> Novo perfil</a>
                 </nav>
                 <div class="sidebar__footer border-0 px-0">
                     <div class="sidebar__user"><i class="bi bi-person-circle"></i> {{ user.get_username }}</div>
