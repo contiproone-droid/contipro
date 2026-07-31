@@ -53,12 +53,17 @@ não editável pela pessoa.
 
 | Campo | Tipo | Notas |
 |---|---|---|
-| `origem` | FK → `PipelineStage` | `related_name='rotas_saida'` |
-| `destino` | FK → `PipelineStage` | `related_name='rotas_entrada'`, `on_delete=PROTECT` (mesma rede de segurança do `Profile.fase_atual`) |
+| `origem` | FK → `PipelineStage` | `related_name='rotas_saida'`, `on_delete=CASCADE` |
+| `destino` | FK → `PipelineStage` | `related_name='rotas_entrada'`, `on_delete=CASCADE` |
 | `rotulo` | `CharField(max_length=100)` | Ex: "Padrão", "Falhou" |
 
 `unique_together = ('origem', 'destino')` — no máximo uma rota entre o mesmo par de fases (evita
-duas linhas ambíguas ligando os dois mesmos nós).
+duas linhas ambíguas ligando os dois mesmos nós). `CASCADE` nos dois lados porque uma rota não
+tem sentido sem os dois extremos existindo — isso é o que implementa "rotas que apontavam pra fase
+apagada somem junto" (seção de exclusão, abaixo). A proteção real contra perda de dado continua
+sendo `Profile.fase_atual` com `on_delete=PROTECT`: a view de exclusão precisa realocar os perfis
+*antes* de apagar a fase, e se algum caminho de código esquecer isso, o `PROTECT` barra o
+`stage.delete()` em vez de deixar `CASCADE` apagar o histórico de perfis silenciosamente.
 
 Uma fase com 0 rotas de saída é uma fase terminal (pode haver mais de uma agora). Uma fase com 1
 rota se comporta como hoje. Uma fase com 2+ rotas exige escolha manual ao avançar.
