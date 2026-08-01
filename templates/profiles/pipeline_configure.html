@@ -7,24 +7,42 @@
 
     .pipeline-node {
         background: var(--bg-surface);
-        border: 1px solid var(--border-subtle);
-        border-radius: .75rem;
-        min-width: 12rem;
-        box-shadow: var(--shadow-card);
+        border: 1px solid rgba(221,139,46,.4);
+        border-radius: .9rem;
+        min-width: 12.5rem;
+        box-shadow: 0 12px 26px -18px rgba(221,139,46,.55), var(--shadow-card);
         overflow: hidden;
+        transition: box-shadow 170ms ease, transform 170ms ease;
+    }
+    .drawflow .drawflow-node:hover .pipeline-node {
+        box-shadow: 0 18px 34px -18px rgba(221,139,46,.6), var(--shadow-raised);
+        transform: translateY(-1px);
     }
     .pipeline-node__header {
         display: flex;
         align-items: center;
-        gap: .5rem;
-        background: var(--ink-950);
-        padding: .55rem .55rem .55rem .75rem;
+        gap: .55rem;
+        height: 2.5rem;
+        padding: 0 .6rem 0 .75rem;
+        color: var(--ink-950);
+        background: linear-gradient(180deg, #e7a352 0%, var(--signal-amber) 60%, var(--signal-amber-dark) 100%);
     }
-    .pipeline-node__header .ph-flag-pennant { color: var(--signal-amber); font-size: 1rem; flex-shrink: 0; }
-    .pipeline-node__name { background: transparent; border: none; font-family: var(--font-body); font-weight: 500; color: #fff; width: 100%; min-width: 0; }
-    .pipeline-node__name:focus { outline: none; border-bottom: 1px solid var(--signal-amber); }
-    .pipeline-node__delete { background: none; border: none; color: #8d92a6; padding: 0; flex-shrink: 0; line-height: 1; }
-    .pipeline-node__delete:hover { color: var(--status-danger); }
+    .pipeline-node__icon-tile {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 1.6rem;
+        height: 1.6rem;
+        border-radius: .5rem;
+        background: rgba(20,23,31,.16);
+        flex-shrink: 0;
+        font-size: .85rem;
+    }
+    .pipeline-node__name { background: transparent; border: none; font-family: var(--font-body); font-weight: 600; color: var(--ink-950); width: 100%; min-width: 0; }
+    .pipeline-node__name:focus { outline: none; border-bottom: 1px solid var(--ink-950); }
+    .pipeline-node__name::placeholder { color: rgba(20,23,31,.5); }
+    .pipeline-node__delete { background: none; border: none; color: rgba(20,23,31,.55); padding: 0; flex-shrink: 0; line-height: 1; }
+    .pipeline-node__delete:hover { color: #7a1f1f; }
 
     .drawflow .drawflow-node { padding: 0; width: auto; background: transparent; border: none; color: inherit; }
     .drawflow .drawflow-node.selected .pipeline-node { border-color: var(--signal-amber); box-shadow: 0 0 0 3px rgba(221,139,46,.18); }
@@ -91,7 +109,7 @@ document.addEventListener('DOMContentLoaded', function () {
     function nodeHtml(nome) {
         return '<div class="pipeline-node">' +
             '<div class="pipeline-node__header">' +
-                '<i class="ph-bold ph-flag-pennant"></i>' +
+                '<span class="pipeline-node__icon-tile"><i class="ph-bold ph-flag-pennant"></i></span>' +
                 '<input class="pipeline-node__name" value="' + escapeHtml(nome) + '" readonly>' +
                 '<button type="button" class="pipeline-node__delete" title="Apagar"><i class="ph-bold ph-trash"></i></button>' +
             '</div>' +
