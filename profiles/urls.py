@@ -19,6 +19,7 @@ urlpatterns = [
     path('pipeline/<int:pk>/mover/', views.pipeline_stage_move, name='pipeline_stage_move'),
     path('pipeline/<int:pk>/apagar/', views.pipeline_stage_delete, name='pipeline_stage_delete'),
     path('pipeline/rotas/criar/', views.pipeline_route_create, name='pipeline_route_create'),
+    path('pipeline/rotas/<int:pk>/renomear/', views.pipeline_route_rename, name='pipeline_route_rename'),
     path('pipeline/rotas/<int:pk>/apagar/', views.pipeline_route_delete, name='pipeline_route_delete'),
     path('api/dashboard-data/', views.api_dashboard_data, name='api_dashboard_data'),
 ]

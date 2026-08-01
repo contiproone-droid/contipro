@@ -256,6 +256,18 @@ def pipeline_route_create(request):
 
 @login_required
 @require_POST
+def pipeline_route_rename(request, pk):
+    rota = get_object_or_404(PipelineRoute, pk=pk)
+    rotulo = request.POST.get('rotulo', '').strip()
+    if not rotulo:
+        return JsonResponse({'ok': False, 'reason': 'rotulo_vazio'}, status=400)
+    rota.rotulo = rotulo
+    rota.save(update_fields=['rotulo'])
+    return JsonResponse({'ok': True, 'route': {'id': rota.pk, 'rotulo': rota.rotulo}})
+
+
+@login_required
+@require_POST
 def pipeline_route_delete(request, pk):
     rota = get_object_or_404(PipelineRoute, pk=pk)
     rota.delete()

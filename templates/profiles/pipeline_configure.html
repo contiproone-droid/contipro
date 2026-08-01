@@ -4,14 +4,48 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/drawflow@0.0.60/dist/drawflow.min.css" integrity="sha384-IFh+Q6zh+LRcTjqVmAKetdGY59dT485vtvWT5DAKQy8iv5+fYWHXisHP7mFKcFqV" crossorigin="anonymous">
 <style>
     #pipelineCanvas { width: 100%; height: calc(100vh - 220px); background: var(--bg-page); border: 1px solid var(--border-subtle); border-radius: .75rem; }
-    .pipeline-node { background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: .6rem; padding: .6rem .8rem; min-width: 10rem; box-shadow: var(--shadow-card); }
-    .pipeline-node__name { background: transparent; border: none; font-family: var(--font-body); font-weight: 500; color: var(--text-body); width: 100%; }
-    .pipeline-node__name:focus { outline: none; border-bottom: 1px solid var(--accent-on-surface); }
-    .pipeline-node__delete { background: none; border: none; color: var(--text-muted); padding: 0; margin-left: .4rem; }
+
+    .pipeline-node {
+        background: var(--bg-surface);
+        border: 1px solid var(--border-subtle);
+        border-radius: .75rem;
+        min-width: 12rem;
+        box-shadow: var(--shadow-card);
+        overflow: hidden;
+    }
+    .pipeline-node__header {
+        display: flex;
+        align-items: center;
+        gap: .5rem;
+        background: var(--ink-950);
+        padding: .55rem .55rem .55rem .75rem;
+    }
+    .pipeline-node__header .ph-flag-pennant { color: var(--signal-amber); font-size: 1rem; flex-shrink: 0; }
+    .pipeline-node__name { background: transparent; border: none; font-family: var(--font-body); font-weight: 500; color: #fff; width: 100%; min-width: 0; }
+    .pipeline-node__name:focus { outline: none; border-bottom: 1px solid var(--signal-amber); }
+    .pipeline-node__delete { background: none; border: none; color: #8d92a6; padding: 0; flex-shrink: 0; line-height: 1; }
     .pipeline-node__delete:hover { color: var(--status-danger); }
+
     .drawflow .drawflow-node { padding: 0; width: auto; background: transparent; border: none; color: inherit; }
-    .drawflow .connection .main-path { stroke: var(--text-muted); stroke-width: 2px; }
+    .drawflow .drawflow-node.selected .pipeline-node { border-color: var(--signal-amber); box-shadow: 0 0 0 3px rgba(221,139,46,.18); }
+    .drawflow .drawflow-node .inputs, .drawflow .drawflow-node .outputs { line-height: 0; }
+    .drawflow .drawflow-node .input, .drawflow .drawflow-node .output {
+        width: .8rem; height: .8rem;
+        background: var(--bg-page);
+        border: 2px solid var(--signal-amber);
+    }
+    .drawflow .drawflow-node .input:hover, .drawflow .drawflow-node .output:hover { background: var(--signal-amber); }
+
+    .drawflow .connection { overflow: visible; }
+    .drawflow .connection .main-path { stroke: var(--text-muted); stroke-width: 2.5px; }
     .drawflow .connection .main-path:hover { stroke: var(--signal-amber); }
+    .drawflow .connection.route-success .main-path { stroke: var(--status-success); }
+    .drawflow .connection.route-danger .main-path { stroke: var(--status-danger); }
+
+    .route-label { cursor: pointer; }
+    .route-label rect { fill: var(--bg-surface-raised); stroke: var(--border-subtle); stroke-width: 1px; }
+    .route-label:hover rect { stroke: var(--signal-amber); }
+    .route-label text { font-family: var(--font-mono); font-size: 11px; fill: var(--text-body); dominant-baseline: middle; }
 </style>
 {% endblock %}
 {% block content %}
@@ -22,7 +56,7 @@
     </div>
     <button type="button" class="btn btn-brand" id="addStageBtn"><i class="ph-bold ph-plus"></i> Nova fase</button>
 </div>
-<p class="text-muted small">Arraste uma fase pra mover. Puxe uma linha da borda de uma fase até outra pra criar uma rota. Clique duplo no nome pra renomear.</p>
+<p class="text-muted small">Arraste uma fase pra mover. Puxe uma linha da borda de uma fase até outra pra criar uma rota (dá pra ter mais de uma saída, ex: "Sucesso" e "Falhou"). Clique duplo no nome da fase pra renomear. Clique no rótulo de uma rota pra renomear ou apagar.</p>
 <div id="pipelineCanvas" data-graph-url="{% url 'profiles:pipeline_graph_data' %}"></div>
 {% endblock %}
 {% block extra_js %}
@@ -56,13 +90,119 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function nodeHtml(nome) {
         return '<div class="pipeline-node">' +
-            '<input class="pipeline-node__name" value="' + escapeHtml(nome) + '" readonly>' +
-            '<button type="button" class="pipeline-node__delete" title="Apagar"><i class="ph-bold ph-trash"></i></button>' +
+            '<div class="pipeline-node__header">' +
+                '<i class="ph-bold ph-flag-pennant"></i>' +
+                '<input class="pipeline-node__name" value="' + escapeHtml(nome) + '" readonly>' +
+                '<button type="button" class="pipeline-node__delete" title="Apagar"><i class="ph-bold ph-trash"></i></button>' +
+            '</div>' +
             '</div>';
     }
 
     var stageIdByNodeId = {};
+    var routeIdByPair = {};
+    var routeLabelById = {};
+    var pairByRouteId = {};
     var importingGraph = true;
+    var suppressConnectionRemoved = false;
+
+    function pairKey(srcId, dstId) { return String(srcId) + '__' + String(dstId); }
+
+    function registerRoute(srcId, dstId, routeId, rotulo) {
+        routeIdByPair[pairKey(srcId, dstId)] = routeId;
+        routeLabelById[routeId] = rotulo;
+        pairByRouteId[routeId] = { src: srcId, dst: dstId };
+    }
+
+    function unregisterRoute(routeId) {
+        var pair = pairByRouteId[routeId];
+        if (pair) delete routeIdByPair[pairKey(pair.src, pair.dst)];
+        delete pairByRouteId[routeId];
+        delete routeLabelById[routeId];
+    }
+
+    function classifyRoute(label) {
+        var s = (label || '').toLowerCase();
+        if (/(falh|erro|n[aã]o|band|recus|cancel)/.test(s)) return 'route-danger';
+        if (/(sucesso|\bsim\b|\bok\b|padr[aã]o|conclu)/.test(s)) return 'route-success';
+        return '';
+    }
+
+    function handleLabelClick(routeId) {
+        var atual = routeLabelById[routeId] || '';
+        var novo = prompt('Rótulo desta rota (deixe em branco e confirme para apagar a rota):', atual);
+        if (novo === null) return;
+        if (novo.trim() === '') {
+            if (!confirm('Apagar esta rota?')) return;
+            post("{% url 'profiles:pipeline_route_delete' 0 %}".replace('0', routeId), {}).then(function (res) {
+                if (!res.data.ok) { alert('Não foi possível apagar a rota.'); return; }
+                var pair = pairByRouteId[routeId];
+                if (pair) {
+                    suppressConnectionRemoved = true;
+                    editor.removeSingleConnection(pair.src, pair.dst, 'output_1', 'input_1');
+                    suppressConnectionRemoved = false;
+                }
+                unregisterRoute(routeId);
+            });
+            return;
+        }
+        post("{% url 'profiles:pipeline_route_rename' 0 %}".replace('0', routeId), { rotulo: novo }).then(function (res) {
+            if (!res.data.ok) { alert('Não foi possível renomear a rota.'); return; }
+            routeLabelById[routeId] = res.data.route.rotulo;
+            updateConnectionLabels();
+        });
+    }
+
+    function updateConnectionLabels() {
+        Object.keys(routeIdByPair).forEach(function (key) {
+            var parts = key.split('__');
+            var srcId = parts[0], dstId = parts[1];
+            var routeId = routeIdByPair[key];
+            var svg = container.querySelector('.connection.node_in_node-' + dstId + '.node_out_node-' + srcId);
+            if (!svg) return;
+            var path = svg.querySelector('path.main-path');
+            if (!path) return;
+
+            var cls = classifyRoute(routeLabelById[routeId]);
+            svg.classList.remove('route-success', 'route-danger');
+            if (cls) svg.classList.add(cls);
+
+            var len = path.getTotalLength();
+            if (!len) return;
+            var mid = path.getPointAtLength(len / 2);
+
+            var group = svg.querySelector('g.route-label');
+            var rect, text;
+            if (!group) {
+                group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                group.setAttribute('class', 'route-label');
+                rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                rect.setAttribute('rx', 6);
+                text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                text.setAttribute('text-anchor', 'middle');
+                group.appendChild(rect);
+                group.appendChild(text);
+                svg.appendChild(group);
+                group.addEventListener('click', function (evt) {
+                    evt.stopPropagation();
+                    handleLabelClick(routeId);
+                });
+            } else {
+                rect = group.querySelector('rect');
+                text = group.querySelector('text');
+            }
+
+            text.textContent = routeLabelById[routeId] || '';
+            text.setAttribute('x', mid.x);
+            text.setAttribute('y', mid.y);
+
+            var bbox = text.getBBox();
+            var padX = 8, padY = 4;
+            rect.setAttribute('x', bbox.x - padX);
+            rect.setAttribute('y', bbox.y - padY);
+            rect.setAttribute('width', bbox.width + padX * 2);
+            rect.setAttribute('height', bbox.height + padY * 2);
+        });
+    }
 
     function wireNode(nodeId, stageId) {
         var el = document.getElementById('node-' + nodeId);
@@ -107,24 +247,43 @@ document.addEventListener('DOMContentLoaded', function () {
             var destinoNodeId = Object.keys(stageIdByNodeId).find(function (k) { return stageIdByNodeId[k] === route.destino; });
             if (origemNodeId && destinoNodeId) {
                 editor.addConnection(origemNodeId, destinoNodeId, 'output_1', 'input_1');
+                registerRoute(origemNodeId, destinoNodeId, route.id, route.rotulo);
             }
         });
 
         importingGraph = false;
+        updateConnectionLabels();
     });
 
     editor.on('nodeMoved', function (nodeId) {
         var pos = editor.drawflow.drawflow.Home.data[nodeId].pos;
         post("{% url 'profiles:pipeline_stage_move' 0 %}".replace('0', stageIdByNodeId[nodeId]), { x: Math.round(pos[0]), y: Math.round(pos[1]) });
+        updateConnectionLabels();
     });
 
     editor.on('connectionCreated', function (info) {
         if (importingGraph) return;
-        var rotulo = prompt('Rótulo desta rota (ex: Padrão, Falhou):', 'Padrão');
+        var rotulo = prompt('Rótulo desta rota (ex: Sucesso, Falhou):', 'Sucesso');
         if (rotulo === null) { editor.removeSingleConnection(info.output_id, info.input_id, info.output_class, info.input_class); return; }
         post("{% url 'profiles:pipeline_route_create' %}", {
             origem: stageIdByNodeId[info.output_id], destino: stageIdByNodeId[info.input_id], rotulo: rotulo,
+        }).then(function (res) {
+            if (!res.data.ok) {
+                alert(res.data.reason === 'ja_existe' ? 'Já existe uma rota entre essas duas fases.' : 'Não foi possível criar a rota.');
+                editor.removeSingleConnection(info.output_id, info.input_id, info.output_class, info.input_class);
+                return;
+            }
+            registerRoute(info.output_id, info.input_id, res.data.route.id, res.data.route.rotulo);
+            updateConnectionLabels();
         });
+    });
+
+    editor.on('connectionRemoved', function (info) {
+        if (importingGraph || suppressConnectionRemoved) return;
+        var routeId = routeIdByPair[pairKey(info.output_id, info.input_id)];
+        if (!routeId) return;
+        post("{% url 'profiles:pipeline_route_delete' 0 %}".replace('0', routeId), {});
+        unregisterRoute(routeId);
     });
 
     document.getElementById('addStageBtn').addEventListener('click', function () {
