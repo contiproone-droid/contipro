@@ -395,6 +395,23 @@
             border: 2px solid var(--bg-page);
         }
 
+        .avatar-initial {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 2.15rem;
+            height: 2.15rem;
+            border-radius: 50%;
+            background: rgba(221,139,46,.14);
+            color: var(--signal-amber-text);
+            font-family: var(--font-display);
+            font-weight: 600;
+            font-size: .85rem;
+            flex-shrink: 0;
+        }
+        html[data-bs-theme="dark"] .avatar-initial { color: var(--signal-amber); }
+        .avatar-initial--lg { width: 3.4rem; height: 3.4rem; font-size: 1.3rem; }
+
         .stat-card__eyebrow {
             font-family: var(--font-mono);
             font-size: .68rem;

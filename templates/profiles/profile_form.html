@@ -13,14 +13,15 @@
     {% endif %}
 </div>
 
-<div class="card">
-    <div class="card-body">
-        <form method="post" novalidate>
-            {% csrf_token %}
-            {% if form.non_field_errors %}
-                <div class="alert alert-danger">{{ form.non_field_errors }}</div>
-            {% endif %}
+<form method="post" novalidate>
+    {% csrf_token %}
+    {% if form.non_field_errors %}
+        <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+    {% endif %}
 
+    <div class="card mb-3">
+        <div class="card-body">
+            <h6 class="card-title mb-3"><span class="section-icon"><i class="ph-bold ph-identification-card"></i></span> Identificação</h6>
             <div class="row g-3">
                 <div class="col-md-6">
                     <label class="form-label">{{ form.nome.label }}</label>
@@ -32,7 +33,14 @@
                     {{ form.email }}
                     {% for error in form.email.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
                 </div>
+            </div>
+        </div>
+    </div>
 
+    <div class="card mb-3">
+        <div class="card-body">
+            <h6 class="card-title mb-3"><span class="section-icon"><i class="ph-bold ph-lock-key"></i></span> Acesso</h6>
+            <div class="row g-3">
                 <div class="col-md-6">
                     <label class="form-label">{{ form.senha.label }}</label>
                     {{ form.senha }}
@@ -40,50 +48,56 @@
                     {% for error in form.senha.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
                 </div>
                 <div class="col-md-6">
-                    <label class="form-label">{{ form.adspower_id.label }}</label>
-                    {{ form.adspower_id }}
-                </div>
-
-                <div class="col-md-6">
                     <label class="form-label">{{ form.tipo_autenticacao.label }}</label>
                     {{ form.tipo_autenticacao }}
                 </div>
-                <div class="col-md-6">
-                    <label class="form-label">{{ form.status.label }}</label>
-                    {{ form.status }}
-                </div>
-
                 <div class="col-md-12">
                     <label class="form-label">{{ form.dados_autenticacao.label }}</label>
                     {{ form.dados_autenticacao }}
                     <div class="form-text">{{ form.dados_autenticacao.help_text }}</div>
                 </div>
+            </div>
+        </div>
+    </div>
 
-                <div class="col-md-6">
+    <div class="card mb-3">
+        <div class="card-body">
+            <h6 class="card-title mb-3"><span class="section-icon"><i class="ph-bold ph-flow-arrow"></i></span> AdsPower &amp; atribuição</h6>
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">{{ form.adspower_id.label }}</label>
+                    {{ form.adspower_id }}
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">{{ form.status.label }}</label>
+                    {{ form.status }}
+                </div>
+                <div class="col-md-4">
                     <label class="form-label">{{ form.responsavel.label }}</label>
                     {{ form.responsavel }}
                 </div>
-
-                <div class="col-md-12">
-                    <label class="form-label">{{ form.observacoes.label }}</label>
-                    {{ form.observacoes }}
-                </div>
             </div>
-
             {% if perfil %}
-                <div class="alert alert-secondary mt-4 small">
+                <div class="alert alert-secondary mt-3 mb-0 small">
                     <i class="ph-bold ph-info"></i>
                     A fase atual (<strong>{{ perfil.fase_atual.nome }}</strong>) é alterada pela ação
                     "Avançar fase" na página de detalhes, não por este formulário — isso garante que toda
                     mudança fique registrada no histórico de auditoria.
                 </div>
             {% endif %}
-
-            <div class="mt-4">
-                <button type="submit" class="btn btn-brand"><i class="ph-bold ph-check"></i> Salvar</button>
-                <a href="{% url 'profiles:profile_list' %}" class="btn btn-link text-decoration-none">Cancelar</a>
-            </div>
-        </form>
+        </div>
     </div>
-</div>
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <h6 class="card-title mb-3"><span class="section-icon"><i class="ph-bold ph-note"></i></span> Observações</h6>
+            {{ form.observacoes }}
+        </div>
+    </div>
+
+    <div class="d-flex align-items-center gap-3">
+        <button type="submit" class="btn btn-brand"><i class="ph-bold ph-check"></i> Salvar</button>
+        <a href="{% url 'profiles:profile_list' %}" class="btn btn-link text-decoration-none">Cancelar</a>
+    </div>
+</form>
 {% endblock %}

@@ -12,6 +12,33 @@
     </a>
 </div>
 
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="card h-100"><div class="card-body">
+            <div class="stat-card__eyebrow">Total de perfis</div>
+            <div class="stat-card__value">{{ total_perfis }}</div>
+        </div></div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card h-100"><div class="card-body">
+            <div class="stat-card__eyebrow">Ativos</div>
+            <div class="stat-card__value" style="color: var(--status-success);">{{ total_ativos }}</div>
+        </div></div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card h-100"><div class="card-body">
+            <div class="stat-card__eyebrow">Concluídos</div>
+            <div class="stat-card__value" style="color: var(--accent-on-surface);">{{ total_concluidos }}</div>
+        </div></div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card h-100"><div class="card-body">
+            <div class="stat-card__eyebrow">Precisam de atenção</div>
+            <div class="stat-card__value" style="color: var(--status-danger);">{{ total_atencao }}</div>
+        </div></div>
+    </div>
+</div>
+
 <div class="card mb-3">
     <div class="card-body">
         <form method="get" class="row g-2 align-items-end">
@@ -52,8 +79,13 @@
                 {% for perfil in perfis %}
                 <tr>
                     <td>
-                        <a href="{% url 'profiles:profile_detail' perfil.pk %}" class="fw-semibold text-decoration-none">{{ perfil.nome }}</a>
-                        <div class="text-muted small">{{ perfil.email }}</div>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="avatar-initial">{{ perfil.nome|first|upper }}</span>
+                            <div>
+                                <a href="{% url 'profiles:profile_detail' perfil.pk %}" class="fw-semibold text-decoration-none">{{ perfil.nome }}</a>
+                                <div class="text-muted small">{{ perfil.email }}</div>
+                            </div>
+                        </div>
                     </td>
                     <td class="mono text-muted">{{ perfil.adspower_id|default:'—' }}</td>
                     <td>

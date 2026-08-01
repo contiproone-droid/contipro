@@ -3,10 +3,13 @@
 {% block title %}{{ perfil.nome }}{% endblock %}
 {% block content %}
 <div class="page-header">
-    <div>
-        <p class="page-header__eyebrow">Perfil</p>
-        <h1 class="page-header__title">{{ perfil.nome }}</h1>
-        <div class="text-muted">{{ perfil.email }}</div>
+    <div class="d-flex align-items-center gap-3">
+        <span class="avatar-initial avatar-initial--lg">{{ perfil.nome|first|upper }}</span>
+        <div>
+            <p class="page-header__eyebrow mb-0">Perfil</p>
+            <h1 class="page-header__title">{{ perfil.nome }}</h1>
+            <div class="text-muted">{{ perfil.email }}</div>
+        </div>
     </div>
     <div class="d-flex gap-2">
         <button type="button" class="btn btn-brand" data-bs-toggle="modal" data-bs-target="#advanceModal{{ perfil.pk }}" {% if perfil.is_concluido %}disabled{% endif %}>

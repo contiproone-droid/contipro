@@ -35,10 +35,16 @@ def profile_list(request):
     paginator = Paginator(perfis, 25)
     page_obj = paginator.get_page(request.GET.get('page'))
 
+    ultima_fase = PipelineStage.objects.order_by('-ordem').first()
+
     return render(request, 'profiles/profile_list.html', {
         'filtro': filtro,
         'page_obj': page_obj,
         'perfis': page_obj.object_list,
+        'total_perfis': Profile.objects.count(),
+        'total_ativos': Profile.objects.filter(status=ProfileStatus.ATIVO).count(),
+        'total_concluidos': Profile.objects.filter(fase_atual=ultima_fase).count() if ultima_fase else 0,
+        'total_atencao': Profile.objects.filter(status__in=[ProfileStatus.BANIDO, ProfileStatus.SUSPENSO]).count(),
     })
 
 
